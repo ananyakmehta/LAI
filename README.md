@@ -33,19 +33,25 @@ and create **two** projects:
 
 For each project, once it's created:
 
-1. Go to **Project Settings → Database**. Under **Connection string**,
-   you'll see two options:
+1. The green **Connect** button (top-right of the project's page) opens a
+   dialog — the **"Direct"** tab has a **Connection Method** radio group:
    - **Transaction pooler** (port 6543) — this is `DATABASE_URL`.
    - **Direct connection** (port 5432) — this is `DIRECT_URL`.
-   Copy both into `.env` (see step 4).
+   Both string values include a `[YOUR-PASSWORD]` placeholder — swap in the
+   real DB password (from project creation, or "Reset database password"
+   right there in the dialog). The **Project URL** (→ `SUPABASE_URL`) is
+   shown right on the project's home page, next to the project name.
 2. Go to **Storage** and create a new **private** bucket named `waivers`.
    Private means files aren't publicly readable by URL — the app fetches
    them server-side.
-3. Go to **Project Settings → API**. Copy the **Project URL** (→
-   `SUPABASE_URL`) and the **service_role** key (→
-   `SUPABASE_SERVICE_ROLE_KEY`, under "Project API keys" — NOT the `anon`
-   key). The service role key bypasses row-level security, so never expose
-   it to the browser or commit it — it's server-only.
+3. Go to **Project Settings → API Keys**. Supabase's newer key system has
+   two sections: **Publishable key** (`sb_publishable_...` — not what we
+   need) and **Secret keys** (`sb_secret_...` — this one). Click the eye
+   icon to reveal it, copy it → `SUPABASE_SERVICE_ROLE_KEY`. It bypasses
+   row-level security, so never expose it to the browser or commit it —
+   server-only. (If your project still shows the older "Legacy anon,
+   service_role API keys" tab instead, the `service_role` key there is the
+   same thing under the old naming.)
 
 **Learning the raw SQL side (dev project only):** Supabase's dashboard has a
 **SQL Editor** — a real Postgres SQL prompt in your browser, no install
@@ -70,11 +76,17 @@ launch.
 
 1. Go to [console.cloud.google.com](https://console.cloud.google.com),
    create a new project (any name, e.g. "LAI Signup").
-2. **APIs & Services → OAuth consent screen**: set up as **Internal** if
-   this Google Workspace org allows it (restricts sign-in to
-   `presentationhs.org` automatically), otherwise **External** — either
-   way, the app's own login check (§7) restricts to the school domain and
-   roster regardless.
+2. **APIs & Services → OAuth consent screen**: set up as **External**, not
+   Internal. Internal-type clients are blocked at Google's infrastructure
+   level from ever authenticating a non-Workspace account — which would
+   permanently rule out the personal-account owner exception below. The
+   app's own login check (§7, plus the personal-account exception in
+   `src/lib/auth.ts`) is the real enforcement regardless of this setting.
+   One consequence of External: users may see an "unverified app" warning
+   during sign-in (a "Continue" link, not a hard block) unless you complete
+   Google's verification review — normal for a project this size, and
+   avoidable review only matters if you request sensitive scopes, which
+   this app doesn't.
 3. **APIs & Services → Credentials → Create Credentials → OAuth client ID**,
    type **Web application**.
    - Authorized redirect URIs: add both
@@ -92,8 +104,14 @@ cp .env.example .env
 
 Fill in everything from steps 1-2, plus:
 
-- `AUTH_SECRET` — generate with `openssl rand -base64 33`.
-- `OWNER_EMAIL` — your own real `@presentationhs.org` address.
+- `AUTH_SECRET` — generate with `openssl rand -base64 33`. Auth.js uses this
+  to sign/encrypt session cookies; it's not tied to any account, just a
+  random secret local to this deployment.
+- `OWNER_EMAIL` — normally your real `@presentationhs.org` address. If your
+  school account will be deleted after graduation and you're using the
+  personal-account exception (`src/lib/auth.ts` — the one address allowed
+  to log in from outside the school domain, gated on actually holding the
+  owner role in `admin_roles`), put that personal email here instead.
 
 Leave `CRON_SECRET` and `SIMULATION_SECRET` blank for now.
 

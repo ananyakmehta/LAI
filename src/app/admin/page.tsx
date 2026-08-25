@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/require-actor";
 import { can } from "@/lib/permissions";
 import { getMasterOverview, getNonResponders, getUnplacedSubmitters } from "@/db/queries/dashboard";
+import { getTripsWithCounts } from "@/db/queries/trips";
+import { RosterRowActions } from "./roster-row-actions";
 import type { Grade } from "@/lib/grade";
 import Link from "next/link";
 
@@ -34,6 +36,9 @@ export default async function AdminPage({
   const unplaced = showNonResponders
     ? await Promise.all(GRADES.map((g) => getUnplacedSubmitters(g)))
     : [];
+
+  const canMove = can.moveAnyStudent(actor);
+  const tripOptions = canMove ? await getTripsWithCounts() : [];
 
   return (
     <main className="mx-auto flex max-w-5xl flex-1 flex-col gap-6 p-8">
@@ -77,23 +82,33 @@ export default async function AdminPage({
       <table className="w-full border-collapse text-left text-sm">
         <thead>
           <tr className="border-b">
-            <th className="py-2">Name</th>
-            <th className="py-2">Email</th>
-            <th className="py-2">Grade</th>
-            <th className="py-2">Submission</th>
-            <th className="py-2">Waiver</th>
-            <th className="py-2">Assigned trip</th>
+            <th className="py-2 pr-4">Name</th>
+            <th className="py-2 pr-4">Email</th>
+            <th className="py-2 pr-4">Grade</th>
+            <th className="py-2 pr-4">Submission</th>
+            <th className="py-2 pr-4">Waiver</th>
+            <th className="py-2 pr-4">Assigned trip</th>
+            {canMove && <th className="py-2 pr-4"></th>}
           </tr>
         </thead>
         <tbody>
           {rows.map((row) => (
             <tr key={row.email} className="border-b">
-              <td className="py-2">{row.name}</td>
-              <td className="py-2">{row.email}</td>
-              <td className="py-2">{row.grade}</td>
-              <td className="py-2">{row.submissionStatus}</td>
-              <td className="py-2">{row.waiverUploadedAt ? "uploaded" : "—"}</td>
-              <td className="py-2">{row.assignedTripName ?? "—"}</td>
+              <td className="py-2 pr-4">{row.name}</td>
+              <td className="py-2 pr-4">{row.email}</td>
+              <td className="py-2 pr-4">{row.grade}</td>
+              <td className="py-2 pr-4">{row.submissionStatus}</td>
+              <td className="py-2 pr-4">{row.waiverUploadedAt ? "uploaded" : "—"}</td>
+              <td className="py-2 pr-4">{row.assignedTripName ?? "—"}</td>
+              {canMove && (
+                <td className="py-2 text-right">
+                  <RosterRowActions
+                    studentEmail={row.email}
+                    currentTripId={row.assignedTripId}
+                    trips={tripOptions}
+                  />
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

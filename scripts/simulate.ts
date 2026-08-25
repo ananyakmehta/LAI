@@ -4,13 +4,14 @@
 //
 //   npm run simulate -- https://your-app.vercel.app
 //
-// Requires SIMULATION_SECRET and CRON_SECRET in .env to match the values
-// set on that deployment, and OWNER_EMAIL for change_log attribution isn't
-// needed here (this script talks to the DB directly for fixtures, and to
-// the deployed HTTP API for the actual concurrency test).
+// Requires SIMULATION_SECRET in .env to match the value set on that
+// deployment. Talks to the DB directly for fixtures and for triggering the
+// lottery (same code path as the CLI's `run-sort`, not the cron HTTP
+// endpoint — see the comment further down), and to the deployed HTTP API
+// only for the actual concurrent-submission test.
 
 import "dotenv/config";
-import { eq, like } from "drizzle-orm";
+import { and, eq, like } from "drizzle-orm";
 import { db } from "../src/db/client";
 import {
   roster,
@@ -19,11 +20,11 @@ import {
   assignments,
   eventConfig,
 } from "../src/db/schema";
+import { runLotteryForWave } from "../src/lib/lottery";
 import type { Grade } from "../src/lib/grade";
 
 const BASE_URL = process.argv[2] ?? process.env.SIMULATE_BASE_URL;
 const SIMULATION_SECRET = process.env.SIMULATION_SECRET;
-const CRON_SECRET = process.env.CRON_SECRET;
 
 const GRADE_COUNTS: Record<Grade, number> = {
   senior: 105,
@@ -37,9 +38,9 @@ async function main() {
     console.error("Usage: npm run simulate -- <deployed-base-url>");
     process.exit(1);
   }
-  if (!SIMULATION_SECRET || !CRON_SECRET) {
+  if (!SIMULATION_SECRET) {
     console.error(
-      "Set SIMULATION_SECRET and CRON_SECRET in .env, matching the deployed instance's values.",
+      "Set SIMULATION_SECRET in .env, matching the deployed instance's value.",
     );
     process.exit(1);
   }
@@ -150,22 +151,30 @@ async function main() {
     detail: `${submitResults.length - submitFailures.length}/${submitResults.length} succeeded`,
   });
 
-  console.log("Running the lottery via the deployed cron endpoint...");
-  const cronRes = await fetch(`${BASE_URL}/api/cron/sort`, {
-    headers: { authorization: `Bearer ${CRON_SECRET}` },
-  });
+  // The wave's closesAt is deliberately still in the future (submissions
+  // needed to stay open during the concurrent-fire phase above), so the
+  // cron endpoint would correctly refuse to sort it — that's the real
+  // "batch algorithm only after the window closes" rule working as
+  // intended, not something to route around via HTTP. Trigger the sort the
+  // same way the CLI's `run-sort` does instead — §10 explicitly documents
+  // this as the fallback for exactly this "run early for testing" case.
+  console.log("Running the lottery directly (run-sort's code path)...");
+  const lotteryResult = await runLotteryForWave(1, "simulate");
   results.push({
-    name: "Cron sort endpoint ran",
-    pass: cronRes.ok,
-    detail: `HTTP ${cronRes.status}`,
+    name: "Lottery ran",
+    pass: lotteryResult.assignedCount + lotteryResult.unplacedCount === lotteryResult.eligibleCount,
+    detail: `${lotteryResult.assignedCount} assigned, ${lotteryResult.unplacedCount} unplaced, ${lotteryResult.eligibleCount} eligible`,
   });
 
   console.log("Verifying the outcome...");
+  // Scoped to simstudent% emails, not just grade=senior — otherwise this
+  // would also pick up any real dev-seed students separately assigned to
+  // non-simulated trips (e.g. via the CLI), skewing the unplaced count.
   const finalAssignments = await db
     .select({ studentEmail: assignments.studentEmail, tripId: assignments.tripId })
     .from(assignments)
     .innerJoin(roster, eq(assignments.studentEmail, roster.email))
-    .where(eq(roster.grade, "senior"));
+    .where(and(eq(roster.grade, "senior"), like(assignments.studentEmail, "simstudent%")));
 
   const perTrip = new Map<string, number>();
   for (const a of finalAssignments) perTrip.set(a.tripId, (perTrip.get(a.tripId) ?? 0) + 1);

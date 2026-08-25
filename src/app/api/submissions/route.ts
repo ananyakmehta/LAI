@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/db/client";
 import { trips } from "@/db/schema";
 import { getRosterByEmail } from "@/db/queries/roster";
-import { getWaveScheduleForGrade, isWindowOpen } from "@/db/queries/waves";
+import { getWaveScheduleForGrade, isSubmissionAccepted, isWindowOpen } from "@/db/queries/waves";
 import { getSubmissionForStudent, upsertSubmission } from "@/db/queries/submissions";
 
 /**
@@ -76,9 +76,10 @@ export async function POST(request: Request) {
   }
 
   // Wave-gating enforced here, server-side — not just hidden in the UI
-  // (§5, §12 step 5).
+  // (§5, §12 step 5). Uses the graced window, not the strict one the UI
+  // shows — see isSubmissionAccepted's doc comment.
   const wave = await getWaveScheduleForGrade(rosterRow.grade);
-  if (!isWindowOpen(wave)) {
+  if (!isSubmissionAccepted(wave)) {
     return NextResponse.json(
       { error: "wave_not_open", grade: rosterRow.grade },
       { status: 403 },

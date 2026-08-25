@@ -3,7 +3,9 @@
 // single event_config row grade-derivation depends on (§7).
 //
 // Usage: npm run seed:owner -- <currentSeniorGradYear>
-// Requires OWNER_EMAIL to be set in .env to your real @presentationhs.org address.
+// Requires OWNER_EMAIL to be set in .env — normally your real
+// @presentationhs.org address, or a personal email if you're using the
+// graduation-proof owner exception in src/lib/auth.ts.
 
 import "dotenv/config";
 import { eq } from "drizzle-orm";
@@ -13,7 +15,7 @@ import { adminRoles, eventConfig } from "../src/db/schema";
 async function main() {
   const ownerEmail = process.env.OWNER_EMAIL;
   if (!ownerEmail) {
-    console.error("Set OWNER_EMAIL in .env to your real @presentationhs.org address.");
+    console.error("Set OWNER_EMAIL in .env.");
     process.exit(1);
   }
 

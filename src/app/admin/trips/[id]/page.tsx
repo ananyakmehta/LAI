@@ -35,19 +35,19 @@ export default async function TripRosterPage({
       <table className="w-full border-collapse text-left text-sm">
         <thead>
           <tr className="border-b">
-            <th className="py-2">Name</th>
-            <th className="py-2">Email</th>
-            <th className="py-2">Grade</th>
-            <th className="py-2">Waiver</th>
+            <th className="py-2 pr-4">Name</th>
+            <th className="py-2 pr-4">Email</th>
+            <th className="py-2 pr-4">Grade</th>
+            <th className="py-2 pr-4">Waiver</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((row) => (
             <tr key={row.email} className="border-b">
-              <td className="py-2">{row.name}</td>
-              <td className="py-2">{row.email}</td>
-              <td className="py-2">{row.grade}</td>
-              <td className="py-2">{row.waiverUploadedAt ? "uploaded" : "—"}</td>
+              <td className="py-2 pr-4">{row.name}</td>
+              <td className="py-2 pr-4">{row.email}</td>
+              <td className="py-2 pr-4">{row.grade}</td>
+              <td className="py-2 pr-4">{row.waiverUploadedAt ? "uploaded" : "—"}</td>
             </tr>
           ))}
         </tbody>

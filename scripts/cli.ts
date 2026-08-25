@@ -13,6 +13,7 @@ import {
   eventConfig,
 } from "../src/db/schema";
 import { runLotteryForWave } from "../src/lib/lottery";
+import { getTripFillStatus, moveStudentToTrip } from "../src/db/queries/moves";
 import type { Grade } from "../src/lib/grade";
 
 const program = new Command();
@@ -78,11 +79,15 @@ program
     }
 
     const trip = await resolveTrip(tripArg);
-    const currentAssignments = await db.select().from(assignments).where(eq(assignments.tripId, trip.id));
+    const status = await getTripFillStatus(trip.id);
+    if (!status) {
+      console.error(`Trip ${trip.id} not found.`);
+      process.exit(1);
+    }
 
-    if (currentAssignments.length >= trip.capacity && !opts.force) {
+    if (status.filled >= status.trip.capacity && !opts.force) {
       const proceed = await confirm(
-        `${trip.name} is at capacity (${currentAssignments.length}/${trip.capacity}). Overbook anyway?`,
+        `${trip.name} is at capacity (${status.filled}/${status.trip.capacity}). Overbook anyway?`,
       );
       if (!proceed) {
         console.log("Cancelled.");
@@ -90,25 +95,7 @@ program
       }
     }
 
-    const [existing] = await db.select().from(assignments).where(eq(assignments.studentEmail, email)).limit(1);
-
-    await db.transaction(async (tx) => {
-      if (existing) {
-        await tx.delete(assignments).where(eq(assignments.studentEmail, email));
-      }
-      await tx.insert(assignments).values({
-        studentEmail: email,
-        tripId: trip.id,
-        assignmentMethod: "manual_admin_override",
-      });
-      await tx.insert(changeLog).values({
-        who,
-        action: "move_student",
-        studentEmail: email,
-        fromTrip: existing?.tripId ?? null,
-        toTrip: trip.id,
-      });
-    });
+    await moveStudentToTrip(email, trip.id, who);
 
     console.log(`Moved ${email} to ${trip.name}.`);
   });

@@ -19,9 +19,9 @@ export default async function TripsPage() {
       <table className="w-full border-collapse text-left text-sm">
         <thead>
           <tr className="border-b">
-            <th className="py-2">Trip</th>
-            <th className="py-2">Description</th>
-            <th className="py-2">Seats remaining</th>
+            <th className="py-2 pr-4">Trip</th>
+            <th className="py-2 pr-4">Description</th>
+            <th className="py-2 pr-4">Seats remaining</th>
           </tr>
         </thead>
         <tbody>
@@ -29,7 +29,7 @@ export default async function TripsPage() {
             <tr key={trip.id} className="border-b">
               <td className="py-2 font-medium">{trip.name}</td>
               <td className="py-2 text-gray-600">{trip.description}</td>
-              <td className="py-2">
+              <td className="py-2 pr-4">
                 {trip.seatsRemaining} / {trip.capacity}
               </td>
             </tr>

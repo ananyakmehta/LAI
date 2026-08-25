@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAllWaveSchedule } from "@/db/queries/waves";
+import { getAllWaveSchedule, gracedCloseTime } from "@/db/queries/waves";
 import { runLotteryForWave } from "@/lib/lottery";
 
 /**
@@ -21,7 +21,9 @@ export async function GET(request: Request) {
 
   for (const wave of schedule) {
     if (wave.sortedAt !== null) continue;
-    if (wave.closesAt > now) continue;
+    // Wait out the same grace period submissions get, so a late-but-graced
+    // submission is guaranteed to land before the lottery runs.
+    if (gracedCloseTime(wave.closesAt) > now) continue;
     results.push(await runLotteryForWave(wave.wave, "cron"));
   }
 

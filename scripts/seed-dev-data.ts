@@ -4,6 +4,7 @@
 // project before running this (never run against prod).
 
 import "dotenv/config";
+import { eq } from "drizzle-orm";
 import { db } from "../src/db/client";
 import { roster, trips, waveSchedule, eventConfig } from "../src/db/schema";
 import type { Grade } from "../src/lib/grade";
@@ -20,28 +21,30 @@ async function main() {
   const [config] = await db.select().from(eventConfig).limit(1);
   const gy = config?.currentSeniorGradYear ?? 27;
 
+  console.log("Resetting dev roster and this script's trips (full wipe, safe to re-run)...");
+  await db.delete(roster); // cascades submissions/assignments/waivers
+  for (const [name] of TRIP_NAMES) {
+    await db.delete(trips).where(eq(trips.name, name)); // no-op if it doesn't exist yet
+  }
+
   console.log("Seeding trips...");
   const tripRows = await db
     .insert(trips)
     .values(TRIP_NAMES.map(([name, description]) => ({ name, description, capacity: 22 })))
     .returning();
 
-  console.log("Seeding roster...");
+  console.log("Seeding roster: simstudent1..20 per grade...");
   const GRADE_OFFSET: Record<Grade, number> = { senior: 0, junior: 1, sophomore: 2, freshman: 3 };
-  const FIRST_NAMES = ["Ava", "Maya", "Sofia", "Chloe", "Zoe", "Nina", "Lily", "Priya", "Emma", "Grace"];
-  const LAST_NAMES = ["Chen", "Patel", "Garcia", "Kim", "Nguyen", "Lopez", "Rossi", "Cohen", "Diaz", "Park"];
 
   const rosterRows = [];
   for (const grade of Object.keys(GRADE_OFFSET) as Grade[]) {
-    for (let i = 0; i < 20; i++) {
-      const first = FIRST_NAMES[i % FIRST_NAMES.length];
-      const last = LAST_NAMES[Math.floor(i / FIRST_NAMES.length) % LAST_NAMES.length];
+    for (let i = 1; i <= 20; i++) {
       const gradYear = gy + GRADE_OFFSET[grade];
-      const email = `${first[0].toLowerCase()}${last.toLowerCase()}${i}.${gradYear}@presentationhs.org`;
-      rosterRows.push({ name: `${first} ${last}`, email, grade, notes: i === 0 ? "example note: mild bee allergy" : "" });
+      const email = `simstudent${i}.${gradYear}@presentationhs.org`;
+      rosterRows.push({ name: `Sim Student ${i}`, email, grade, notes: "" });
     }
   }
-  await db.insert(roster).values(rosterRows).onConflictDoNothing();
+  await db.insert(roster).values(rosterRows);
 
   console.log("Seeding wave schedule (all placeholder — adjust with `npm run cli -- set-wave`)...");
   const now = new Date();
