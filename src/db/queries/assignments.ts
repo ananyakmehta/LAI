@@ -1,6 +1,12 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { assignments, roster, trips } from "@/db/schema";
+import { assignments, trips } from "@/db/schema";
+
+// No student-facing "who else is on my trip" query here, deliberately —
+// see the schema.ts comment on event_config: students must never see
+// trip-mate names, at any point (DD_LAI_ui_spec.md §0). Teacher/admin
+// trip-roster views use getMasterOverview (src/db/queries/dashboard.ts)
+// instead, which is permission-scoped to those roles.
 
 export async function getOwnAssignment(email: string) {
   const [row] = await db
@@ -14,14 +20,4 @@ export async function getOwnAssignment(email: string) {
     .where(eq(assignments.studentEmail, email))
     .limit(1);
   return row ?? null;
-}
-
-/** Names only (§6: "See their own trip's roster (names)") — not emails. */
-export async function getTripRosterNames(tripId: string) {
-  const rows = await db
-    .select({ name: roster.name })
-    .from(assignments)
-    .innerJoin(roster, eq(roster.email, assignments.studentEmail))
-    .where(eq(assignments.tripId, tripId));
-  return rows.map((r) => r.name);
 }

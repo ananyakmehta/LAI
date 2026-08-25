@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { requireRole } from "@/lib/require-actor";
-import { can } from "@/lib/permissions";
+import { getViewContext } from "@/lib/view-context";
+import { can, type Actor } from "@/lib/permissions";
 import { getMasterOverview } from "@/db/queries/dashboard";
 import { getTripById } from "@/db/queries/trips";
 import Link from "next/link";
@@ -10,10 +10,14 @@ export default async function TripRosterPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const actor = await requireRole("owner", "staff_admin", "teacher");
-  const { id: tripId } = await params;
+  const ctx = await getViewContext();
+  if (!ctx || (ctx.role !== "owner" && ctx.role !== "staff_admin")) {
+    redirect("/");
+  }
+  const actor: Actor = { email: ctx.email, role: ctx.role, teacherTripId: ctx.teacherTripId };
 
-  if (!can.viewNamesEmails(actor, tripId)) redirect("/");
+  const { id: tripId } = await params;
+  if (!can.viewNamesEmails(actor, tripId)) redirect("/admin");
 
   const trip = await getTripById(tripId);
   if (!trip) redirect("/admin");
@@ -24,8 +28,8 @@ export default async function TripRosterPage({
 
   return (
     <main className="mx-auto flex max-w-2xl flex-1 flex-col gap-4 p-8">
-      <Link href="/" className="text-sm text-gray-500 underline">
-        &larr; back
+      <Link href="/admin" className="text-sm text-gray-500 underline">
+        &larr; back to dashboard
       </Link>
       <h1 className="text-2xl font-semibold">{trip.name}</h1>
       <p className="text-sm text-gray-600">

@@ -158,12 +158,14 @@ npm run cli -- set-wave 2 "2026-09-15T08:00:00-07:00" "2026-09-15T23:59:00-07:00
 npm run cli -- set-wave 3 "2026-09-16T08:00:00-07:00" "2026-09-16T23:59:00-07:00"
 npm run cli -- set-wave 4 "2026-09-17T08:00:00-07:00" "2026-09-17T23:59:00-07:00"
 
-npm run cli -- set-event-dates --reveal "2026-09-18T09:00:00-07:00" \
+npm run cli -- set-event-dates \
   --change-window-end "2026-09-25T23:59:00-07:00" \
   --final-lock "2026-10-02T23:59:00-07:00"
 ```
 
-(Wave 1=senior, 2=junior, 3=sophomore, 4=freshman, per §5.)
+(Wave 1=senior, 2=junior, 3=sophomore, 4=freshman, per §5. There's no
+roster-reveal date — DD_LAI_ui_spec.md §0 removed that entirely: students
+never see trip-mate names, at any point.)
 
 ## 7. Run it locally
 
@@ -171,9 +173,9 @@ npm run cli -- set-event-dates --reveal "2026-09-18T09:00:00-07:00" \
 npm run dev
 ```
 
-Open http://localhost:3000, sign in with your `OWNER_EMAIL` Google account
-(needs to be a real Google account on the `presentationhs.org` domain), and
-you should land on the admin dashboard link.
+Open http://localhost:3000, sign in with your `OWNER_EMAIL` Google account,
+and you should land on `/admin` automatically (owner/staff-admin redirect
+there; students and teachers get their own single-page view at `/`).
 
 ## 8. Deploy to Vercel
 
@@ -204,9 +206,28 @@ npm run cli -- run-sort 1
 npm run cli -- set-capacity "Museum of Art" 25
 npm run cli -- grant-role someone@presentationhs.org staff_admin
 npm run cli -- grant-role teacher@presentationhs.org teacher "Museum of Art"
+npm run cli -- revoke-role someone@presentationhs.org
 ```
 
-Every command writes to `change_log` automatically.
+Every command writes to `change_log` automatically. Grant/revoke are also
+available from the admin dashboard's Access Management section (owner
+only) — same underlying functions, just a second front door.
+
+### Owner role-simulation ("view as"), for testing before institution access
+
+Set `ROLE_SIMULATION_ENABLED="true"` in `.env` to unlock a "View as" panel
+on the admin dashboard — preview the app as a student (picks from the real
+roster, and can actually submit/upload as that student to exercise the
+real write path), a teacher (pick a trip), or staff-admin. A banner stays
+on every page while simulating, with an "Exit simulation" link — this is
+the only way back once simulating a non-admin role, since `/admin` becomes
+unreachable while simulating student/teacher.
+
+**Turn this back off before real students use the app.** It's off by
+default on purpose: it lets the owner act as any roster student, including
+actually submitting a ranking on their behalf, which is fine against fake
+dev data but cuts against §1's promise that students exclusively control
+their own submissions once real data is loaded.
 
 ## 10. Before loading real student data: run the simulation
 

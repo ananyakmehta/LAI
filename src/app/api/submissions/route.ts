@@ -1,44 +1,28 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { inArray } from "drizzle-orm";
-import { auth } from "@/lib/auth";
 import { db } from "@/db/client";
 import { trips } from "@/db/schema";
 import { getRosterByEmail } from "@/db/queries/roster";
 import { getWaveScheduleForGrade, isSubmissionAccepted, isWindowOpen } from "@/db/queries/waves";
 import { getSubmissionForStudent, upsertSubmission } from "@/db/queries/submissions";
-
-/**
- * ~100-150 fake students (§13) can't have real Google accounts, so the load
- * test needs a way to submit as a given roster email without a Google OAuth
- * session. This bypass only activates when SIMULATION_SECRET is set AND the
- * caller supplies it — it must be unset (or the deployment redeployed
- * without it) before any real student data is loaded, since it is
- * deliberately an auth bypass. Wave-gating and every other check below still
- * apply in full; only identity resolution changes.
- */
-function resolveIdentity(request: Request, session: { user?: { email?: string | null } } | null): string | null {
-  const simulationSecret = process.env.SIMULATION_SECRET;
-  if (simulationSecret && request.headers.get("x-simulation-secret") === simulationSecret) {
-    return request.headers.get("x-simulation-email");
-  }
-  return session?.user?.email ?? null;
-}
+import { getOwnAssignment } from "@/db/queries/assignments";
+import { resolveStudentIdentity } from "@/lib/student-identity";
 
 export async function GET(request: Request) {
-  const session = await auth();
-  const email = resolveIdentity(request, session);
+  const email = await resolveStudentIdentity(request);
   if (!email) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const [submission, rosterRow] = await Promise.all([
+  const [submission, rosterRow, assignment] = await Promise.all([
     getSubmissionForStudent(email),
     getRosterByEmail(email),
+    getOwnAssignment(email),
   ]);
 
   if (!rosterRow) {
-    return NextResponse.json({ submission, waveOpen: false, grade: null });
+    return NextResponse.json({ submission, waveOpen: false, grade: null, assignment: null, sortedAt: null });
   }
 
   const wave = await getWaveScheduleForGrade(rosterRow.grade);
@@ -47,6 +31,9 @@ export async function GET(request: Request) {
     waveOpen: isWindowOpen(wave),
     grade: rosterRow.grade,
     closesAt: wave?.closesAt ?? null,
+    opensAt: wave?.opensAt ?? null,
+    sortedAt: wave?.sortedAt ?? null,
+    assignment: assignment ? { tripName: assignment.tripName } : null,
   });
 }
 
@@ -59,8 +46,7 @@ const bodySchema = z.discriminatedUnion("optedOut", [
 ]);
 
 export async function POST(request: Request) {
-  const session = await auth();
-  const email = resolveIdentity(request, session);
+  const email = await resolveStudentIdentity(request);
   if (!email) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }

@@ -7,13 +7,13 @@ import {
   roster,
   assignments,
   changeLog,
-  adminRoles,
   trips,
   waveSchedule,
   eventConfig,
 } from "../src/db/schema";
 import { runLotteryForWave } from "../src/lib/lottery";
 import { getTripFillStatus, moveStudentToTrip } from "../src/db/queries/moves";
+import { grantRole, revokeRole, type GrantableRole } from "../src/db/queries/access";
 import type { Grade } from "../src/lib/grade";
 
 const program = new Command();
@@ -213,20 +213,23 @@ program
       tripId = trip.id;
     }
 
-    await db.transaction(async (tx) => {
-      await tx
-        .insert(adminRoles)
-        .values({ email, role: role as "owner" | "staff_admin" | "teacher", tripId })
-        .onConflictDoUpdate({ target: adminRoles.email, set: { role: role as "owner" | "staff_admin" | "teacher", tripId } });
-      await tx.insert(changeLog).values({
-        who,
-        action: "grant_role",
-        studentEmail: email,
-        toTrip: `${role}${tripId ? `:${tripId}` : ""}`,
-      });
-    });
+    await grantRole(email, role as GrantableRole, tripId, who);
 
     console.log(`Granted ${role} to ${email}${tripId ? ` (trip ${tripId})` : ""}.`);
+  });
+
+program
+  .command("revoke-role <email>")
+  .description("Remove an email's owner/staff_admin/teacher access")
+  .action(async (email: string) => {
+    const who = ownerIdentity();
+    email = email.toLowerCase();
+    const revoked = await revokeRole(email, who);
+    if (!revoked) {
+      console.error(`${email} has no admin_roles entry.`);
+      process.exit(1);
+    }
+    console.log(`Revoked access for ${email}.`);
   });
 
 program
@@ -264,11 +267,10 @@ program
 
 program
   .command("set-event-dates")
-  .description("Set roster-reveal / change-request-window-end / final-lock dates")
-  .option("--reveal <iso>", "roster reveal timestamp")
+  .description("Set change-request-window-end / final-lock dates")
   .option("--change-window-end <iso>", "change-request window end timestamp")
   .option("--final-lock <iso>", "final lock timestamp (UI-copy only, per §5)")
-  .action(async (opts: { reveal?: string; changeWindowEnd?: string; finalLock?: string }) => {
+  .action(async (opts: { changeWindowEnd?: string; finalLock?: string }) => {
     const who = ownerIdentity();
     const [existing] = await db.select().from(eventConfig).limit(1);
     if (!existing) {
@@ -277,12 +279,11 @@ program
     }
 
     const update: Record<string, Date> = {};
-    if (opts.reveal) update.rosterRevealAt = new Date(opts.reveal);
     if (opts.changeWindowEnd) update.changeRequestWindowEndsAt = new Date(opts.changeWindowEnd);
     if (opts.finalLock) update.finalLockAt = new Date(opts.finalLock);
 
     if (Object.keys(update).length === 0) {
-      console.error("Pass at least one of --reveal, --change-window-end, --final-lock.");
+      console.error("Pass at least one of --change-window-end, --final-lock.");
       process.exit(1);
     }
 

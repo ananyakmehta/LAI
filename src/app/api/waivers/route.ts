@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { getRosterByEmail } from "@/db/queries/roster";
 import { getWaiverForStudent, upsertWaiver } from "@/db/queries/waivers";
+import { resolveStudentIdentity } from "@/lib/student-identity";
 import {
   supabaseStorage,
   WAIVER_BUCKET,
@@ -10,18 +10,17 @@ import {
 
 const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
 
-export async function GET() {
-  const session = await auth();
-  if (!session?.user?.email) {
+export async function GET(request: Request) {
+  const email = await resolveStudentIdentity(request);
+  if (!email) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  const waiver = await getWaiverForStudent(session.user.email);
+  const waiver = await getWaiverForStudent(email);
   return NextResponse.json({ waiver });
 }
 
 export async function POST(request: Request) {
-  const session = await auth();
-  const email = session?.user?.email;
+  const email = await resolveStudentIdentity(request);
   if (!email) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }

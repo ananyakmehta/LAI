@@ -1,9 +1,13 @@
 import { redirect } from "next/navigation";
-import { requireRole } from "@/lib/require-actor";
-import { can } from "@/lib/permissions";
+import { getViewContext, roleSimulationEnabled } from "@/lib/view-context";
+import { can, type Actor } from "@/lib/permissions";
 import { getMasterOverview, getNonResponders, getUnplacedSubmitters } from "@/db/queries/dashboard";
 import { getTripsWithCounts } from "@/db/queries/trips";
+import { getRecentChangeLog } from "@/db/queries/change-log";
+import { getAdminRolesList } from "@/db/queries/access";
 import { RosterRowActions } from "./roster-row-actions";
+import { AccessManagement } from "./access-management";
+import { ViewAsControl } from "./view-as-control";
 import type { Grade } from "@/lib/grade";
 import Link from "next/link";
 
@@ -14,13 +18,17 @@ export default async function AdminPage({
 }: {
   searchParams: Promise<{ grade?: string; status?: string }>;
 }) {
-  const actor = await requireRole("owner", "staff_admin", "teacher");
-
-  // Teachers only ever see their own trip — send them straight there.
-  if (actor.role === "teacher") {
-    if (!actor.teacherTripId) redirect("/");
-    redirect(`/admin/trips/${actor.teacherTripId}`);
+  const ctx = await getViewContext();
+  if (!ctx || (ctx.role !== "owner" && ctx.role !== "staff_admin")) {
+    redirect("/");
   }
+
+  // Every capability check below is on the EFFECTIVE role — this is what
+  // makes "view as staff_admin" a real preview: the owner sees exactly
+  // what staff_admin sees, including which sections don't exist at all,
+  // not just greyed-out buttons. The underlying mutating API routes still
+  // authorize off the real actor independently (see view-context.ts).
+  const actor: Actor = { email: ctx.email, role: ctx.role, teacherTripId: ctx.teacherTripId };
 
   const { grade, status } = await searchParams;
   const rows = (await getMasterOverview()).filter((row) => {
@@ -38,102 +46,179 @@ export default async function AdminPage({
     : [];
 
   const canMove = can.moveAnyStudent(actor);
-  const tripOptions = canMove ? await getTripsWithCounts() : [];
+  const tripOptions = await getTripsWithCounts();
+
+  const isOwnerView = actor.role === "owner";
+  const changeLog = isOwnerView ? await getRecentChangeLog(50) : [];
+  const adminRoles = isOwnerView ? await getAdminRolesList() : [];
+
+  const showViewAsControl = ctx.realActor.role === "owner" && !ctx.simulated && roleSimulationEnabled();
 
   return (
-    <main className="mx-auto flex max-w-5xl flex-1 flex-col gap-6 p-8">
+    <main className="mx-auto flex max-w-5xl flex-1 flex-col gap-8 p-8">
       <Link href="/" className="text-sm text-gray-500 underline">
         &larr; back
       </Link>
       <h1 className="text-2xl font-semibold">Admin dashboard</h1>
 
-      <form className="flex flex-wrap items-end gap-3 text-sm" method="get">
-        <label className="flex flex-col gap-1">
-          Grade
-          <select name="grade" defaultValue={grade ?? ""} className="rounded border p-1">
-            <option value="">All</option>
-            {GRADES.map((g) => (
-              <option key={g} value={g}>
-                {g}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1">
-          Submission status
-          <select name="status" defaultValue={status ?? ""} className="rounded border p-1">
-            <option value="">All</option>
-            <option value="none">Not submitted</option>
-            <option value="submitted">Submitted</option>
-            <option value="opted_out">Opted out</option>
-          </select>
-        </label>
-        <button type="submit" className="rounded border px-3 py-1">
-          Filter
-        </button>
-        <a
-          className="rounded border px-3 py-1"
-          href={`/api/admin/roster-export`}
-        >
-          Export CSV
-        </a>
-      </form>
+      {showViewAsControl && (
+        <section>
+          <h2 className="mb-2 text-lg font-semibold">View as</h2>
+          <ViewAsControl
+            rosterOptions={rows.map((r) => ({ email: r.email, name: r.name, grade: r.grade }))}
+            trips={tripOptions}
+          />
+        </section>
+      )}
 
-      <table className="w-full border-collapse text-left text-sm">
-        <thead>
-          <tr className="border-b">
-            <th className="py-2 pr-4">Name</th>
-            <th className="py-2 pr-4">Email</th>
-            <th className="py-2 pr-4">Grade</th>
-            <th className="py-2 pr-4">Submission</th>
-            <th className="py-2 pr-4">Waiver</th>
-            <th className="py-2 pr-4">Assigned trip</th>
-            {canMove && <th className="py-2 pr-4"></th>}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.email} className="border-b">
-              <td className="py-2 pr-4">{row.name}</td>
-              <td className="py-2 pr-4">{row.email}</td>
-              <td className="py-2 pr-4">{row.grade}</td>
-              <td className="py-2 pr-4">{row.submissionStatus}</td>
-              <td className="py-2 pr-4">{row.waiverUploadedAt ? "uploaded" : "—"}</td>
-              <td className="py-2 pr-4">{row.assignedTripName ?? "—"}</td>
-              {canMove && (
-                <td className="py-2 text-right">
-                  <RosterRowActions
-                    studentEmail={row.email}
-                    currentTripId={row.assignedTripId}
-                    trips={tripOptions}
-                  />
-                </td>
-              )}
+      <section>
+        <h2 className="mb-2 text-lg font-semibold">Roster overview</h2>
+        <form className="mb-3 flex flex-wrap items-end gap-3 text-sm" method="get">
+          <label className="flex flex-col gap-1">
+            Grade
+            <select name="grade" defaultValue={grade ?? ""} className="rounded border p-1">
+              <option value="">All</option>
+              {GRADES.map((g) => (
+                <option key={g} value={g}>
+                  {g}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1">
+            Submission status
+            <select name="status" defaultValue={status ?? ""} className="rounded border p-1">
+              <option value="">All</option>
+              <option value="none">Not submitted</option>
+              <option value="submitted">Submitted</option>
+              <option value="opted_out">Opted out</option>
+            </select>
+          </label>
+          <button type="submit" className="rounded border px-3 py-1">
+            Filter
+          </button>
+          <a className="rounded border px-3 py-1" href={`/api/admin/roster-export`}>
+            Export CSV
+          </a>
+        </form>
+
+        <table className="w-full border-collapse text-left text-sm">
+          <thead>
+            <tr className="border-b">
+              <th className="py-2 pr-4">Name</th>
+              <th className="py-2 pr-4">Email</th>
+              <th className="py-2 pr-4">Grade</th>
+              <th className="py-2 pr-4">Submission</th>
+              <th className="py-2 pr-4">Waiver</th>
+              <th className="py-2 pr-4">Assigned trip</th>
+              {canMove && <th className="py-2 pr-4"></th>}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.email} className="border-b">
+                <td className="py-2 pr-4">{row.name}</td>
+                <td className="py-2 pr-4">{row.email}</td>
+                <td className="py-2 pr-4">{row.grade}</td>
+                <td className="py-2 pr-4">{row.submissionStatus}</td>
+                <td className="py-2 pr-4">{row.waiverUploadedAt ? "uploaded" : "—"}</td>
+                <td className="py-2 pr-4">{row.assignedTripName ?? "—"}</td>
+                {canMove && (
+                  <td className="py-2 text-right">
+                    <RosterRowActions
+                      studentEmail={row.email}
+                      currentTripId={row.assignedTripId}
+                      trips={tripOptions}
+                    />
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2 className="mb-2 text-lg font-semibold">Trips overview</h2>
+        <table className="w-full border-collapse text-left text-sm">
+          <thead>
+            <tr className="border-b">
+              <th className="py-2 pr-4">Trip</th>
+              <th className="py-2 pr-4">Filled</th>
+              <th className="py-2 pr-4">Capacity</th>
+              <th className="py-2 pr-4"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {tripOptions.map((t) => (
+              <tr key={t.id} className="border-b">
+                <td className="py-2 pr-4">{t.name}</td>
+                <td className="py-2 pr-4">{t.seatsFilled}</td>
+                <td className="py-2 pr-4">{t.capacity}</td>
+                <td className="py-2 pr-4">
+                  <Link href={`/admin/trips/${t.id}`} className="underline">
+                    View roster
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
 
       {showNonResponders && (
-        <>
-          <section>
-            <h2 className="text-lg font-semibold">
-              Non-responders (need manual placement)
-            </h2>
+        <section>
+          <h2 className="text-lg font-semibold">Actions</h2>
+          <div className="mt-2">
+            <h3 className="text-sm font-medium">Non-responders (need manual placement)</h3>
             {GRADES.map((g, i) => (
               <FlagList key={g} grade={g} rows={nonResponders[i]} />
             ))}
-          </section>
-
-          <section>
-            <h2 className="text-lg font-semibold">
-              Submitted but unplaced (all 4 choices were full)
-            </h2>
+          </div>
+          <div className="mt-4">
+            <h3 className="text-sm font-medium">Submitted but unplaced (all 4 choices were full)</h3>
             {GRADES.map((g, i) => (
               <FlagList key={g} grade={g} rows={unplaced[i]} />
             ))}
-          </section>
-        </>
+          </div>
+
+          {isOwnerView && (
+            <div className="mt-4">
+              <h3 className="text-sm font-medium">Change log</h3>
+              <table className="w-full border-collapse text-left text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className="py-2 pr-4">When</th>
+                    <th className="py-2 pr-4">Who</th>
+                    <th className="py-2 pr-4">Action</th>
+                    <th className="py-2 pr-4">Student</th>
+                    <th className="py-2 pr-4">From</th>
+                    <th className="py-2 pr-4">To</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {changeLog.map((c) => (
+                    <tr key={c.id} className="border-b">
+                      <td className="py-2 pr-4">{c.timestamp.toLocaleString()}</td>
+                      <td className="py-2 pr-4">{c.who}</td>
+                      <td className="py-2 pr-4">{c.action}</td>
+                      <td className="py-2 pr-4">{c.studentEmail ?? "—"}</td>
+                      <td className="py-2 pr-4">{c.fromTrip ?? "—"}</td>
+                      <td className="py-2 pr-4">{c.toTrip ?? "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
+
+      {isOwnerView && (
+        <section>
+          <h2 className="mb-2 text-lg font-semibold">Access management</h2>
+          <AccessManagement roles={adminRoles} trips={tripOptions} />
+        </section>
       )}
     </main>
   );

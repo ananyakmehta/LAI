@@ -160,13 +160,16 @@ export const waveSchedule = pgTable(
   (table) => [unique().on(table.wave)],
 );
 
-// Single-row config table for the three post-wave phases (§5) and the
+// Single-row config table for the post-wave phases (§5) and the
 // grade-derivation anchor (§7). A single row keyed by a fixed id so the app
 // can always `SELECT * FROM event_config LIMIT 1`.
+//
+// No roster-reveal date here, deliberately: the school decided students
+// must never see the names of who else is on their trip, at any point
+// (DD_LAI_ui_spec.md §0) — don't re-add a reveal-phase timestamp.
 export const eventConfig = pgTable("event_config", {
   id: integer("id").primaryKey().default(1),
   currentSeniorGradYear: integer("current_senior_grad_year").notNull(),
-  rosterRevealAt: timestamp("roster_reveal_at", { withTimezone: true }),
   changeRequestWindowEndsAt: timestamp("change_request_window_ends_at", {
     withTimezone: true,
   }),

@@ -1,0 +1,1 @@
+ALTER TABLE "event_config" DROP COLUMN "roster_reveal_at";
