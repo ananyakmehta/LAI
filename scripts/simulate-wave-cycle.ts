@@ -1,11 +1,15 @@
 // Full end-to-end wave-cycle simulation: compresses all 4 waves into real
-// short windows (back to back), fires random submissions through the REAL
-// HTTP endpoint (real wave-gating enforced, not faked) as each wave's
-// window is actually open, confirms an out-of-wave grade is genuinely
-// blocked at each step, runs the real lottery once each window closes, and
-// finishes with a full per-student choice-rank report. Resets all existing
-// submissions/assignments for the current roster first, so this is a clean
-// run.
+// short windows (back to back), fires weighted-random submissions through
+// the REAL HTTP endpoint (real wave-gating enforced, not faked) as each
+// wave's window is actually open, confirms an out-of-wave grade is
+// genuinely blocked at each step, runs the real lottery once each window
+// closes, and finishes with a full per-student choice-rank report. A
+// configurable number of students (NON_RESPONDER_COUNT) submit nothing at
+// all, so the admin dashboard's non-responder flagging gets exercised too.
+// Resets all existing submissions/assignments for the current roster
+// first, so this is a clean run. Trip capacity is NOT touched by this
+// script — set it separately (CLI `set-capacity`) if you want a specific
+// demand-vs-supply scenario.
 //
 // Usage: npm run simulate:wave-cycle -- http://localhost:3000
 // Requires SIMULATION_SECRET in .env matching the target deployment.
@@ -31,6 +35,43 @@ const WAVE_MS = WAVE_MINUTES * 60 * 1000;
 // Wait out the app's actual current grace period (whatever it's configured
 // to right now) plus a small safety margin, before triggering the sort.
 const GRACE_MS = GRACE_PERIOD_MS + 5000;
+
+/**
+ * Percent weights applied to trips in alphabetical-by-name order, for a
+ * deliberately skewed demand test (must have one entry per trip, summing
+ * to ~100). Set to null for uniform-random choices instead.
+ */
+const TRIP_WEIGHT_PERCENTAGES: number[] | null = [50, 20, 10, 10, 10];
+
+/**
+ * How many students, picked at random across the whole roster, should
+ * submit nothing at all this run — real non-responders, left for manual
+ * placement rather than folded into the lottery (§3).
+ */
+const NON_RESPONDER_COUNT = 7;
+
+function weightedSampleWithoutReplacement<T>(
+  items: { item: T; weight: number }[],
+  count: number,
+): T[] {
+  const pool = [...items];
+  const result: T[] = [];
+  for (let i = 0; i < count && pool.length > 0; i++) {
+    const totalWeight = pool.reduce((sum, p) => sum + p.weight, 0);
+    let r = Math.random() * totalWeight;
+    let idx = pool.length - 1;
+    for (let j = 0; j < pool.length; j++) {
+      r -= pool[j].weight;
+      if (r <= 0) {
+        idx = j;
+        break;
+      }
+    }
+    result.push(pool[idx].item);
+    pool.splice(idx, 1);
+  }
+  return result;
+}
 
 const WAVES: { wave: number; grade: Grade }[] = [
   { wave: 1, grade: "senior" },
@@ -86,12 +127,31 @@ async function main() {
   }
   const tripIdsAll = allTrips.map((t) => t.id);
 
+  const sortedTrips = [...allTrips].sort((a, b) => a.name.localeCompare(b.name));
+  if (TRIP_WEIGHT_PERCENTAGES && TRIP_WEIGHT_PERCENTAGES.length !== sortedTrips.length) {
+    console.error(
+      `TRIP_WEIGHT_PERCENTAGES has ${TRIP_WEIGHT_PERCENTAGES.length} entries but there are ${sortedTrips.length} trips.`,
+    );
+    process.exit(1);
+  }
+  const weightedTrips = sortedTrips.map((t, i) => ({
+    item: t,
+    weight: TRIP_WEIGHT_PERCENTAGES ? TRIP_WEIGHT_PERCENTAGES[i] : 1,
+  }));
+  if (TRIP_WEIGHT_PERCENTAGES) {
+    log("Demand weights for this run:");
+    for (const wt of weightedTrips) log(`  ${wt.item.name}: ${wt.weight}%`);
+  }
+
   log(`Simulating against ${BASE_URL}. Wave duration: ${WAVE_MINUTES} minutes each, ${WAVES.length} waves (~${(WAVES.length * WAVE_MINUTES)} min total).`);
 
   log("Resetting submissions/assignments for the current roster (clean run)...");
   const allStudents = await db.select().from(roster);
   await db.delete(assignments);
   await db.delete(submissions);
+
+  const nonResponders = new Set(shuffle(allStudents).slice(0, NON_RESPONDER_COUNT).map((s) => s.email));
+  log(`Selected ${nonResponders.size} students as non-responders (will submit nothing): ${[...nonResponders].join(", ")}`);
 
   log(`Scheduling ${WAVES.length} back-to-back ${WAVE_MINUTES}-minute waves starting now...`);
   const scheduleStart = new Date(Date.now() + 5000); // small buffer so wave 1's "opensAt" isn't already in the past by the time we insert it
@@ -140,11 +200,13 @@ async function main() {
       }
     }
 
-    const gradeStudents = allStudents.filter((s) => s.grade === w.grade);
-    log(`  Submitting random rankings for ${gradeStudents.length} ${w.grade} students...`);
+    const allGradeStudents = allStudents.filter((s) => s.grade === w.grade);
+    const gradeStudents = allGradeStudents.filter((s) => !nonResponders.has(s.email));
+    const skipped = allGradeStudents.length - gradeStudents.length;
+    log(`  Submitting weighted rankings for ${gradeStudents.length} ${w.grade} students (${skipped} left as non-responders)...`);
     const results = await Promise.all(
       gradeStudents.map(async (s) => {
-        const choices = shuffle(tripIdsAll).slice(0, 4);
+        const choices = weightedSampleWithoutReplacement(weightedTrips, 4).map((t) => t.id);
         const status = await submitFor(s.email, choices);
         return status;
       }),
@@ -206,6 +268,7 @@ async function main() {
   const rankCounts = [0, 0, 0, 0];
   let noneOf4 = 0;
   let optedOutCount = 0;
+  let noSubmissionCount = 0;
 
   for (const row of finalRows) {
     let outcome: string;
@@ -215,6 +278,7 @@ async function main() {
     } else if (!row.assignedTripId) {
       if (row.tripChoice1 === null && !row.optedOut) {
         outcome = "no submission";
+        noSubmissionCount++;
       } else {
         outcome = "none of their 4 choices";
         noneOf4++;
@@ -242,6 +306,7 @@ async function main() {
   console.log(`Got #4 choice: ${rankCounts[3]}`);
   console.log(`Got none of their 4 choices: ${noneOf4}`);
   console.log(`Opted out: ${optedOutCount}`);
+  console.log(`Non-responders (no submission at all): ${noSubmissionCount}`);
 
   console.log("\n--- Checks ---");
   for (const c of allChecks) {
