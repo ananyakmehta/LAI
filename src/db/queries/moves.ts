@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { assignments, changeLog, trips, waveSchedule } from "@/db/schema";
+import { assignments, changeLog, submissions, trips, waveSchedule } from "@/db/schema";
 
 export async function getTripFillStatus(tripId: string) {
   const [trip] = await db.select().from(trips).where(eq(trips.id, tripId)).limit(1);
@@ -50,27 +50,36 @@ export async function moveStudentToTrip(
 
 /**
  * Owner-only simulation control (src/app/admin/simulation-panel.tsx):
- * clears every assignment across the whole roster — all grades, all trips
- * — and resets sortedAt on every wave so the dashboard doesn't keep
- * showing a stale "already sorted" state after the wipe. Submissions
- * (students' rankings) are untouched, so a re-run of "Sort" reuses
- * whatever rankings are already on file. Mirrors the blunt reset
- * scripts/simulate-wave-cycle.ts does at the start of a run, just exposed
- * as a one-click control instead of a full script re-run.
+ * clears every assignment AND every submission across the whole roster —
+ * all grades, all trips — and resets sortedAt on every wave so the
+ * dashboard doesn't keep showing a stale "already sorted" state after the
+ * wipe. A full clean slate: re-running "Assign random rankings" afterward
+ * generates fresh rankings rather than reusing old ones. Mirrors the
+ * blunt reset scripts/simulate-wave-cycle.ts does at the start of a run,
+ * just exposed as a one-click control instead of a full script re-run.
  */
-export async function resetAllAssignments(who: string): Promise<{ clearedCount: number }> {
+export async function resetAllSubmissionsAndAssignments(
+  who: string,
+): Promise<{ clearedAssignments: number; clearedSubmissions: number }> {
   return db.transaction(async (tx) => {
-    const existing = await tx.select({ id: assignments.id }).from(assignments);
-    const clearedCount = existing.length;
-    if (clearedCount > 0) {
+    const existingAssignments = await tx.select({ id: assignments.id }).from(assignments);
+    const clearedAssignments = existingAssignments.length;
+    if (clearedAssignments > 0) {
       await tx.delete(assignments);
     }
+
+    const existingSubmissions = await tx.select({ id: submissions.id }).from(submissions);
+    const clearedSubmissions = existingSubmissions.length;
+    if (clearedSubmissions > 0) {
+      await tx.delete(submissions);
+    }
+
     await tx.update(waveSchedule).set({ sortedAt: null });
     await tx.insert(changeLog).values({
       who,
-      action: "reset_assignments",
-      toTrip: `cleared_${clearedCount}`,
+      action: "reset_submissions_and_assignments",
+      toTrip: `cleared_${clearedAssignments}_assignments_${clearedSubmissions}_submissions`,
     });
-    return { clearedCount };
+    return { clearedAssignments, clearedSubmissions };
   });
 }
