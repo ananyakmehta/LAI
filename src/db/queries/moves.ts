@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { assignments, changeLog, trips } from "@/db/schema";
+import { assignments, changeLog, trips, waveSchedule } from "@/db/schema";
 
 export async function getTripFillStatus(tripId: string) {
   const [trip] = await db.select().from(trips).where(eq(trips.id, tripId)).limit(1);
@@ -46,4 +46,31 @@ export async function moveStudentToTrip(
   });
 
   return { fromTripId: existing?.tripId ?? null };
+}
+
+/**
+ * Owner-only simulation control (src/app/admin/simulation-panel.tsx):
+ * clears every assignment across the whole roster — all grades, all trips
+ * — and resets sortedAt on every wave so the dashboard doesn't keep
+ * showing a stale "already sorted" state after the wipe. Submissions
+ * (students' rankings) are untouched, so a re-run of "Sort" reuses
+ * whatever rankings are already on file. Mirrors the blunt reset
+ * scripts/simulate-wave-cycle.ts does at the start of a run, just exposed
+ * as a one-click control instead of a full script re-run.
+ */
+export async function resetAllAssignments(who: string): Promise<{ clearedCount: number }> {
+  return db.transaction(async (tx) => {
+    const existing = await tx.select({ id: assignments.id }).from(assignments);
+    const clearedCount = existing.length;
+    if (clearedCount > 0) {
+      await tx.delete(assignments);
+    }
+    await tx.update(waveSchedule).set({ sortedAt: null });
+    await tx.insert(changeLog).values({
+      who,
+      action: "reset_assignments",
+      toTrip: `cleared_${clearedCount}`,
+    });
+    return { clearedCount };
+  });
 }

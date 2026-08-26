@@ -29,6 +29,7 @@ export function SimulationPanel({ trips }: { trips: TripOption[] }) {
       <AssignRankingsControl trips={trips} />
       <WaveControl />
       <SortControl />
+      <ResetControl />
     </div>
   );
 }
@@ -253,6 +254,46 @@ function SortControl() {
           className="rounded bg-magenta px-3 py-1 text-white hover:bg-rose disabled:opacity-40"
         >
           Run sort
+        </button>
+      </div>
+      {result && (
+        <p className={`mt-2 ${status === "error" ? "text-red-600" : "text-plum/70"}`}>{result}</p>
+      )}
+    </div>
+  );
+}
+
+function ResetControl() {
+  const router = useRouter();
+  const [status, setStatus] = useState<"idle" | "running" | "error">("idle");
+  const [result, setResult] = useState<string | null>(null);
+
+  async function run() {
+    setStatus("running");
+    setResult(null);
+    const res = await fetch("/api/admin/simulate/reset", { method: "POST" });
+    const data = await res.json();
+    if (!res.ok) {
+      setStatus("error");
+      setResult(data.error ?? "Failed.");
+      return;
+    }
+    setStatus("idle");
+    setResult(`Cleared ${data.clearedCount} assignment(s) across all grades. Submissions were left untouched.`);
+    router.refresh();
+  }
+
+  return (
+    <div className="rounded border border-petal bg-white p-3 text-sm">
+      <h3 className="mb-2 font-medium text-plum">Reset</h3>
+      <div className="flex flex-wrap items-end gap-2">
+        <button
+          type="button"
+          onClick={run}
+          disabled={status === "running"}
+          className="rounded bg-magenta px-3 py-1 text-white hover:bg-rose disabled:opacity-40"
+        >
+          Unassign all students (every grade)
         </button>
       </div>
       {result && (
