@@ -14,6 +14,7 @@ export async function getTripsWithCounts() {
       name: trips.name,
       description: trips.description,
       capacity: trips.capacity,
+      chaperoneTeacherEmail: trips.chaperoneTeacherEmail,
       seatsFilled: sql<number>`count(${assignments.id})`.mapWith(Number),
     })
     .from(trips)

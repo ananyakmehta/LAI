@@ -14,7 +14,8 @@
     "seed:owner": "tsx scripts/seed-owner.ts",
     "seed:dev-data": "tsx scripts/seed-dev-data.ts",
     "simulate": "tsx scripts/simulate.ts",
-    "generate-rankings": "tsx scripts/generate-rankings.ts"
+    "generate-rankings": "tsx scripts/generate-rankings.ts",
+    "simulate:wave-cycle": "tsx scripts/simulate-wave-cycle.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",

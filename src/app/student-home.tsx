@@ -8,6 +8,7 @@ interface Trip {
   description: string;
   seatsRemaining: number;
   capacity: number;
+  chaperoneTeacherEmail: string | null;
 }
 
 interface SubmissionStatus {
@@ -228,7 +229,29 @@ function StateB({
       </button>
       {saveState === "saved" && <p className="text-sm text-green-700">Saved — you can change this any time before the deadline.</p>}
       {saveState === "error" && errorMessage && <p className="text-sm text-red-600">{errorMessage}</p>}
+
+      <TripOptions trips={trips} />
     </section>
+  );
+}
+
+/** Shown alongside the ranked-choice selection, per trip: name, chaperone, and description. */
+function TripOptions({ trips }: { trips: Trip[] }) {
+  return (
+    <div className="mt-4 border-t pt-4">
+      <h3 className="mb-2 text-sm font-semibold">Trip options</h3>
+      <ul className="flex flex-col gap-3 text-sm">
+        {trips.map((t) => (
+          <li key={t.id} className="rounded border p-3">
+            <p className="font-medium">{t.name}</p>
+            <p className="text-gray-600">
+              Chaperone: {t.chaperoneTeacherEmail ?? "Not yet assigned"}
+            </p>
+            <p className="text-gray-600">{t.description || "Description coming soon."}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 

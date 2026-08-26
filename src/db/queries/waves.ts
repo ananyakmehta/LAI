@@ -44,8 +44,13 @@ export function isWindowOpen(
  * window is deliberately backend-only, used for the actual accept/reject
  * decision on a submission and for how long the overnight sort waits
  * before treating a wave as truly closed.
+ *
+ * Exported so scripts/simulate-wave-cycle.ts can derive its own wait
+ * buffer from whatever this is currently set to, rather than duplicating
+ * the number — if you ever need to shrink this again for a short-wave
+ * test run, remember to revert it back to `5 * 60 * 1000` afterward.
  */
-const GRACE_PERIOD_MS = 5 * 60 * 1000;
+export const GRACE_PERIOD_MS = 5 * 60 * 1000;
 
 export function isSubmissionAccepted(
   wave: { opensAt: Date; closesAt: Date } | null,
