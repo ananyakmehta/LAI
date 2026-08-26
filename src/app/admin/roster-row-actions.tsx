@@ -22,6 +22,14 @@ export function RosterRowActions({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [moving, setMoving] = useState(false);
+  const [viewingChoices, setViewingChoices] = useState(false);
+  const [choices, setChoices] = useState<{
+    optedOut: boolean;
+    tripChoice1: string | null;
+    tripChoice2: string | null;
+    tripChoice3: string | null;
+    tripChoice4: string | null;
+  } | null | undefined>(undefined); // undefined = loading, null = no submission
   const [selectedTripId, setSelectedTripId] = useState("");
   const [status, setStatus] = useState<"idle" | "saving" | "confirm" | "error">("idle");
   const [confirmInfo, setConfirmInfo] = useState<{
@@ -46,10 +54,25 @@ export function RosterRowActions({
   function reset() {
     setOpen(false);
     setMoving(false);
+    setViewingChoices(false);
+    setChoices(undefined);
     setSelectedTripId("");
     setStatus("idle");
     setConfirmInfo(null);
     setErrorMessage(null);
+  }
+
+  async function viewChoices() {
+    setViewingChoices(true);
+    setChoices(undefined);
+    const res = await fetch(`/api/admin/student-submission?email=${encodeURIComponent(studentEmail)}`);
+    const data = await res.json();
+    setChoices(data.submission ?? null);
+  }
+
+  function tripName(id: string | null): string | null {
+    if (!id) return null;
+    return trips.find((t) => t.id === id)?.name ?? "(unknown trip)";
   }
 
   async function submitMove(force: boolean) {
@@ -88,8 +111,8 @@ export function RosterRowActions({
         ⋮
       </button>
 
-      {open && !moving && (
-        <div className="absolute right-0 z-10 mt-1 w-32 rounded border bg-white text-sm text-gray-900 shadow">
+      {open && !moving && !viewingChoices && (
+        <div className="absolute right-0 z-10 mt-1 w-40 rounded border bg-white text-sm text-gray-900 shadow">
           <button
             className="block w-full px-3 py-2 text-left hover:bg-gray-50"
             onClick={() => setMoving(true)}
@@ -97,7 +120,33 @@ export function RosterRowActions({
           >
             Move
           </button>
+          <button
+            className="block w-full px-3 py-2 text-left hover:bg-gray-50"
+            onClick={viewChoices}
+            type="button"
+          >
+            View choices
+          </button>
           {/* more row actions land here later */}
+        </div>
+      )}
+
+      {open && viewingChoices && (
+        <div className="absolute right-0 z-10 mt-1 w-64 rounded border bg-white p-3 text-sm text-gray-900 shadow">
+          {choices === undefined && <p>Loading…</p>}
+          {choices === null && <p>No submission yet.</p>}
+          {choices && choices.optedOut && <p>Opted out.</p>}
+          {choices && !choices.optedOut && (
+            <ol className="list-inside list-decimal">
+              <li>{tripName(choices.tripChoice1)}</li>
+              <li>{tripName(choices.tripChoice2)}</li>
+              <li>{tripName(choices.tripChoice3)}</li>
+              <li>{tripName(choices.tripChoice4)}</li>
+            </ol>
+          )}
+          <button type="button" onClick={reset} className="mt-2 rounded border px-2 py-1">
+            Close
+          </button>
         </div>
       )}
 

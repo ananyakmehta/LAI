@@ -10,10 +10,13 @@ export function roleSimulationEnabled(): boolean {
   return process.env.ROLE_SIMULATION_ENABLED === "true";
 }
 
+export type TimePhase = "before" | "during" | "after";
+
 export interface SimulationTarget {
   role: Exclude<Role, "owner">;
   email?: string; // student only
   tripId?: string; // teacher only
+  timePhase?: TimePhase; // student only — see simulatedNowForPhase in db/queries/waves.ts
 }
 
 export interface ViewContext {
@@ -24,6 +27,8 @@ export interface ViewContext {
   email: string;
   teacherTripId: string | null;
   simulated: boolean;
+  /** Student simulation only — a fake wave-relative clock for this identity's own gating checks, never touching real wave_schedule rows or other students. */
+  timePhase: TimePhase | null;
 }
 
 /**
@@ -49,6 +54,7 @@ export async function getViewContext(): Promise<ViewContext | null> {
       email: realActor.email,
       teacherTripId: realActor.teacherTripId,
       simulated: false,
+      timePhase: null,
     };
   }
 
@@ -60,6 +66,7 @@ export async function getViewContext(): Promise<ViewContext | null> {
       email: realActor.email,
       teacherTripId: realActor.teacherTripId,
       simulated: false,
+      timePhase: null,
     };
   }
 
@@ -70,6 +77,7 @@ export async function getViewContext(): Promise<ViewContext | null> {
       email: target.email,
       teacherTripId: null,
       simulated: true,
+      timePhase: target.timePhase ?? null,
     };
   }
 
@@ -80,6 +88,7 @@ export async function getViewContext(): Promise<ViewContext | null> {
       email: realActor.email,
       teacherTripId: target.tripId,
       simulated: true,
+      timePhase: null,
     };
   }
 
@@ -90,6 +99,7 @@ export async function getViewContext(): Promise<ViewContext | null> {
       email: realActor.email,
       teacherTripId: null,
       simulated: true,
+      timePhase: null,
     };
   }
 
@@ -100,6 +110,7 @@ export async function getViewContext(): Promise<ViewContext | null> {
     email: realActor.email,
     teacherTripId: realActor.teacherTripId,
     simulated: false,
+    timePhase: null,
   };
 }
 

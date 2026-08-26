@@ -11,19 +11,20 @@ import {
 const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
 
 export async function GET(request: Request) {
-  const email = await resolveStudentIdentity(request);
-  if (!email) {
+  const identity = await resolveStudentIdentity(request);
+  if (!identity) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  const waiver = await getWaiverForStudent(email);
+  const waiver = await getWaiverForStudent(identity.email);
   return NextResponse.json({ waiver });
 }
 
 export async function POST(request: Request) {
-  const email = await resolveStudentIdentity(request);
-  if (!email) {
+  const identity = await resolveStudentIdentity(request);
+  if (!identity) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+  const { email } = identity;
 
   // Waiver upload isn't wave-gated — students may need to upload it any
   // time (§3 tracks it independently of ranking status).

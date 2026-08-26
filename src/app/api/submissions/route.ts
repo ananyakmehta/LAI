@@ -4,16 +4,22 @@ import { inArray } from "drizzle-orm";
 import { db } from "@/db/client";
 import { trips } from "@/db/schema";
 import { getRosterByEmail } from "@/db/queries/roster";
-import { getWaveScheduleForGrade, isSubmissionAccepted, isWindowOpen } from "@/db/queries/waves";
+import {
+  getWaveScheduleForGrade,
+  isSubmissionAccepted,
+  isWindowOpen,
+  simulatedNowForPhase,
+} from "@/db/queries/waves";
 import { getSubmissionForStudent, upsertSubmission } from "@/db/queries/submissions";
 import { getOwnAssignment } from "@/db/queries/assignments";
 import { resolveStudentIdentity } from "@/lib/student-identity";
 
 export async function GET(request: Request) {
-  const email = await resolveStudentIdentity(request);
-  if (!email) {
+  const identity = await resolveStudentIdentity(request);
+  if (!identity) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+  const { email, timePhase } = identity;
 
   const [submission, rosterRow, assignment] = await Promise.all([
     getSubmissionForStudent(email),
@@ -26,9 +32,10 @@ export async function GET(request: Request) {
   }
 
   const wave = await getWaveScheduleForGrade(rosterRow.grade);
+  const effectiveNow = timePhase ? simulatedNowForPhase(wave, timePhase) : new Date();
   return NextResponse.json({
     submission,
-    waveOpen: isWindowOpen(wave),
+    waveOpen: isWindowOpen(wave, effectiveNow),
     grade: rosterRow.grade,
     closesAt: wave?.closesAt ?? null,
     opensAt: wave?.opensAt ?? null,
@@ -46,10 +53,11 @@ const bodySchema = z.discriminatedUnion("optedOut", [
 ]);
 
 export async function POST(request: Request) {
-  const email = await resolveStudentIdentity(request);
-  if (!email) {
+  const identity = await resolveStudentIdentity(request);
+  if (!identity) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+  const { email, timePhase } = identity;
 
   // Only students (present on the roster) submit rankings — admin/teacher
   // accounts aren't on the roster at all (see the auth.ts admin bypass).
@@ -63,9 +71,12 @@ export async function POST(request: Request) {
 
   // Wave-gating enforced here, server-side — not just hidden in the UI
   // (§5, §12 step 5). Uses the graced window, not the strict one the UI
-  // shows — see isSubmissionAccepted's doc comment.
+  // shows — see isSubmissionAccepted's doc comment. A simulated student
+  // with a time phase chosen gets a fake "now" for this check only — see
+  // simulatedNowForPhase; every other student's gating is unaffected.
   const wave = await getWaveScheduleForGrade(rosterRow.grade);
-  if (!isSubmissionAccepted(wave)) {
+  const effectiveNow = timePhase ? simulatedNowForPhase(wave, timePhase) : new Date();
+  if (!isSubmissionAccepted(wave, effectiveNow)) {
     return NextResponse.json(
       { error: "wave_not_open", grade: rosterRow.grade },
       { status: 403 },

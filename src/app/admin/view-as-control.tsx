@@ -25,6 +25,7 @@ export function ViewAsControl({
   const [role, setRole] = useState<"student" | "teacher" | "staff_admin">("student");
   const [email, setEmail] = useState("");
   const [tripId, setTripId] = useState("");
+  const [timePhase, setTimePhase] = useState<"before" | "during" | "after">("during");
   const [status, setStatus] = useState<"idle" | "saving" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -38,6 +39,7 @@ export function ViewAsControl({
         role,
         email: role === "student" ? email : undefined,
         tripId: role === "teacher" ? tripId : undefined,
+        timePhase: role === "student" ? timePhase : undefined,
       }),
     });
     if (res.ok) {
@@ -66,17 +68,31 @@ export function ViewAsControl({
       </label>
 
       {role === "student" && (
-        <label className="flex flex-col gap-1">
-          Student
-          <select className="rounded border p-1" value={email} onChange={(e) => setEmail(e.target.value)}>
-            <option value="">Select a student…</option>
-            {rosterOptions.map((r) => (
-              <option key={r.email} value={r.email}>
-                {r.name} ({r.grade})
-              </option>
-            ))}
-          </select>
-        </label>
+        <>
+          <label className="flex flex-col gap-1">
+            Student
+            <select className="rounded border p-1" value={email} onChange={(e) => setEmail(e.target.value)}>
+              <option value="">Select a student…</option>
+              {rosterOptions.map((r) => (
+                <option key={r.email} value={r.email}>
+                  {r.name} ({r.grade})
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1">
+            Wave time
+            <select
+              className="rounded border p-1"
+              value={timePhase}
+              onChange={(e) => setTimePhase(e.target.value as typeof timePhase)}
+            >
+              <option value="before">Before their wave opens</option>
+              <option value="during">During their wave (can submit)</option>
+              <option value="after">After their wave closes</option>
+            </select>
+          </label>
+        </>
       )}
 
       {role === "teacher" && (

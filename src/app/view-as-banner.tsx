@@ -14,7 +14,7 @@ export async function ViewAsBanner() {
   const ctx = await getViewContext();
   if (!ctx?.simulated) return null;
 
-  const label = await describeSimulation(ctx.role, ctx.email, ctx.teacherTripId);
+  const label = await describeSimulation(ctx.role, ctx.email, ctx.teacherTripId, ctx.timePhase);
 
   return (
     <div className="flex items-center justify-between bg-amber-100 px-4 py-2 text-sm text-amber-900">
@@ -34,12 +34,22 @@ export async function ViewAsBanner() {
   );
 }
 
+const PHASE_LABEL: Record<string, string> = {
+  before: "before wave opens",
+  during: "during wave",
+  after: "after wave closes",
+};
+
 async function describeSimulation(
   role: string,
   email: string,
   teacherTripId: string | null,
+  timePhase: string | null,
 ): Promise<string> {
-  if (role === "student") return `Student (${email})`;
+  if (role === "student") {
+    const phase = timePhase ? `, ${PHASE_LABEL[timePhase] ?? timePhase}` : "";
+    return `Student (${email}${phase})`;
+  }
   if (role === "teacher") {
     const trip = teacherTripId ? await getTripById(teacherTripId) : null;
     return `Teacher (${trip?.name ?? "unknown trip"})`;

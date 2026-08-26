@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { waveSchedule } from "@/db/schema";
 import type { Grade } from "@/lib/grade";
+import type { TimePhase } from "@/lib/view-context";
 
 export async function getWaveScheduleForGrade(grade: Grade) {
   const [row] = await db
@@ -59,4 +60,24 @@ export function isSubmissionAccepted(
 /** The timestamp the overnight sort should wait for before treating a wave as closed — see isSubmissionAccepted. */
 export function gracedCloseTime(closesAt: Date): Date {
   return new Date(closesAt.getTime() + GRACE_PERIOD_MS);
+}
+
+const PHASE_OFFSET_MS = 60 * 60 * 1000; // 1 hour — comfortably outside the 5-min grace window either side
+
+/**
+ * A fake "now" for previewing a wave-relative state while simulating a
+ * student (owner role-simulation, §"view as" — src/lib/view-context.ts).
+ * Computed relative to that student's own grade's real wave_schedule row;
+ * never writes to it, and only ever affects gating checks made for this
+ * one simulated identity's own requests — every other student's real
+ * gating is computed from the real clock, untouched.
+ */
+export function simulatedNowForPhase(
+  wave: { opensAt: Date; closesAt: Date } | null,
+  phase: TimePhase,
+): Date {
+  if (!wave) return new Date();
+  if (phase === "before") return new Date(wave.opensAt.getTime() - PHASE_OFFSET_MS);
+  if (phase === "after") return new Date(wave.closesAt.getTime() + PHASE_OFFSET_MS);
+  return new Date((wave.opensAt.getTime() + wave.closesAt.getTime()) / 2);
 }

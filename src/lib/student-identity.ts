@@ -1,4 +1,10 @@
-import { getViewContext } from "@/lib/view-context";
+import { getViewContext, type TimePhase } from "@/lib/view-context";
+
+export interface ResolvedStudentIdentity {
+  email: string;
+  /** Only set for an active "view as student" simulation with a time phase chosen — see simulatedNowForPhase. */
+  timePhase: TimePhase | null;
+}
 
 /**
  * Resolves which student's identity a submissions/waivers write should be
@@ -18,13 +24,16 @@ import { getViewContext } from "@/lib/view-context";
  * admin/teacher session, not simulating a student, correctly can't submit
  * a ranking or upload a waiver through this path).
  */
-export async function resolveStudentIdentity(request: Request): Promise<string | null> {
+export async function resolveStudentIdentity(request: Request): Promise<ResolvedStudentIdentity | null> {
   const simulationSecret = process.env.SIMULATION_SECRET;
   if (simulationSecret && request.headers.get("x-simulation-secret") === simulationSecret) {
-    return request.headers.get("x-simulation-email");
+    const email = request.headers.get("x-simulation-email");
+    return email ? { email, timePhase: null } : null;
   }
 
   const ctx = await getViewContext();
-  if (ctx?.role === "student") return ctx.email;
+  if (ctx?.role === "student") {
+    return { email: ctx.email, timePhase: ctx.simulated ? ctx.timePhase : null };
+  }
   return null;
 }

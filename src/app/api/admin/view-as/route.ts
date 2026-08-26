@@ -14,6 +14,7 @@ const bodySchema = z.object({
   role: z.enum(["student", "teacher", "staff_admin"]),
   email: z.string().email().optional(),
   tripId: z.string().uuid().optional(),
+  timePhase: z.enum(["before", "during", "after"]).optional(),
 });
 
 /**
@@ -45,6 +46,7 @@ export async function POST(request: Request) {
     role: parsed.data.role,
     email: parsed.data.email?.toLowerCase(),
     tripId: parsed.data.tripId,
+    timePhase: parsed.data.role === "student" ? (parsed.data.timePhase ?? "during") : undefined,
   };
 
   const validationError = await validateSimulationTarget(target);
