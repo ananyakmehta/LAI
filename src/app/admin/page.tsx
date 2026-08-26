@@ -56,14 +56,14 @@ export default async function AdminPage({
 
   return (
     <main className="mx-auto flex max-w-5xl flex-1 flex-col gap-8 p-8">
-      <Link href="/" className="text-sm text-gray-500 underline">
+      <Link href="/" className="text-sm text-plum/60 underline">
         &larr; back
       </Link>
-      <h1 className="text-2xl font-semibold">Admin dashboard</h1>
+      <h1 className="text-2xl font-semibold text-plum">Admin dashboard</h1>
 
       {showViewAsControl && (
         <section>
-          <h2 className="mb-2 text-lg font-semibold">View as</h2>
+          <h2 className="mb-2 text-lg font-semibold text-plum">View as</h2>
           <ViewAsControl
             rosterOptions={rows.map((r) => ({ email: r.email, name: r.name, grade: r.grade }))}
             trips={tripOptions}
@@ -72,11 +72,11 @@ export default async function AdminPage({
       )}
 
       <section>
-        <h2 className="mb-2 text-lg font-semibold">Roster overview</h2>
+        <h2 className="mb-2 text-lg font-semibold text-plum">Roster overview</h2>
         <form className="mb-3 flex flex-wrap items-end gap-3 text-sm" method="get">
           <label className="flex flex-col gap-1">
             Grade
-            <select name="grade" defaultValue={grade ?? ""} className="rounded border p-1">
+            <select name="grade" defaultValue={grade ?? ""} className="rounded border border-petal bg-white p-1">
               <option value="">All</option>
               {GRADES.map((g) => (
                 <option key={g} value={g}>
@@ -87,24 +87,24 @@ export default async function AdminPage({
           </label>
           <label className="flex flex-col gap-1">
             Submission status
-            <select name="status" defaultValue={status ?? ""} className="rounded border p-1">
+            <select name="status" defaultValue={status ?? ""} className="rounded border border-petal bg-white p-1">
               <option value="">All</option>
               <option value="none">Not submitted</option>
               <option value="submitted">Submitted</option>
               <option value="opted_out">Opted out</option>
             </select>
           </label>
-          <button type="submit" className="rounded border px-3 py-1">
+          <button type="submit" className="rounded border border-rose px-3 py-1 hover:bg-petal">
             Filter
           </button>
-          <a className="rounded border px-3 py-1" href={`/api/admin/roster-export`}>
+          <a className="rounded border border-rose px-3 py-1 hover:bg-petal" href={`/api/admin/roster-export`}>
             Export CSV
           </a>
         </form>
 
         <table className="w-full border-collapse text-left text-sm">
           <thead>
-            <tr className="border-b">
+            <tr className="border-b border-petal">
               <th className="py-2 pr-4">Name</th>
               <th className="py-2 pr-4">Email</th>
               <th className="py-2 pr-4">Grade</th>
@@ -116,7 +116,7 @@ export default async function AdminPage({
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={row.email} className="border-b">
+              <tr key={row.email} className="border-b border-petal">
                 <td className="py-2 pr-4">{row.name}</td>
                 <td className="py-2 pr-4">{row.email}</td>
                 <td className="py-2 pr-4">{row.grade}</td>
@@ -139,10 +139,10 @@ export default async function AdminPage({
       </section>
 
       <section>
-        <h2 className="mb-2 text-lg font-semibold">Trips overview</h2>
+        <h2 className="mb-2 text-lg font-semibold text-plum">Trips overview</h2>
         <table className="w-full border-collapse text-left text-sm">
           <thead>
-            <tr className="border-b">
+            <tr className="border-b border-petal">
               <th className="py-2 pr-4">Trip</th>
               <th className="py-2 pr-4">Filled</th>
               <th className="py-2 pr-4">Capacity</th>
@@ -151,12 +151,12 @@ export default async function AdminPage({
           </thead>
           <tbody>
             {tripOptions.map((t) => (
-              <tr key={t.id} className="border-b">
+              <tr key={t.id} className="border-b border-petal">
                 <td className="py-2 pr-4">{t.name}</td>
                 <td className="py-2 pr-4">{t.seatsFilled}</td>
                 <td className="py-2 pr-4">{t.capacity}</td>
                 <td className="py-2 pr-4">
-                  <Link href={`/admin/trips/${t.id}`} className="underline">
+                  <Link href={`/admin/trips/${t.id}`} className="text-plum underline">
                     View roster
                   </Link>
                 </td>
@@ -168,15 +168,15 @@ export default async function AdminPage({
 
       {showNonResponders && (
         <section>
-          <h2 className="text-lg font-semibold">Actions</h2>
+          <h2 className="text-lg font-semibold text-plum">Actions</h2>
           <div className="mt-2">
-            <h3 className="text-sm font-medium">Non-responders (need manual placement)</h3>
+            <h3 className="text-sm font-medium text-plum">Non-responders (need manual placement)</h3>
             {GRADES.map((g, i) => (
               <FlagList key={g} grade={g} rows={nonResponders[i]} />
             ))}
           </div>
           <div className="mt-4">
-            <h3 className="text-sm font-medium">Submitted but unplaced (all 4 choices were full)</h3>
+            <h3 className="text-sm font-medium text-plum">Submitted but unplaced (all 4 choices were full)</h3>
             {GRADES.map((g, i) => (
               <FlagList key={g} grade={g} rows={unplaced[i]} />
             ))}
@@ -184,10 +184,10 @@ export default async function AdminPage({
 
           {isOwnerView && (
             <div className="mt-4">
-              <h3 className="text-sm font-medium">Change log</h3>
+              <h3 className="text-sm font-medium text-plum">Change log</h3>
               <table className="w-full border-collapse text-left text-sm">
                 <thead>
-                  <tr className="border-b">
+                  <tr className="border-b border-petal">
                     <th className="py-2 pr-4">When</th>
                     <th className="py-2 pr-4">Who</th>
                     <th className="py-2 pr-4">Action</th>
@@ -198,7 +198,7 @@ export default async function AdminPage({
                 </thead>
                 <tbody>
                   {changeLog.map((c) => (
-                    <tr key={c.id} className="border-b">
+                    <tr key={c.id} className="border-b border-petal">
                       <td className="py-2 pr-4">{c.timestamp.toLocaleString()}</td>
                       <td className="py-2 pr-4">{c.who}</td>
                       <td className="py-2 pr-4">{c.action}</td>
@@ -216,7 +216,7 @@ export default async function AdminPage({
 
       {isOwnerView && (
         <section>
-          <h2 className="mb-2 text-lg font-semibold">Access management</h2>
+          <h2 className="mb-2 text-lg font-semibold text-plum">Access management</h2>
           <AccessManagement roles={adminRoles} trips={tripOptions} />
         </section>
       )}
@@ -234,7 +234,7 @@ function FlagList({
   if (rows.length === 0) return null;
   return (
     <div className="mt-2">
-      <p className="text-sm font-medium capitalize">{grade}</p>
+      <p className="text-sm font-medium capitalize text-plum">{grade}</p>
       <ul className="list-inside list-disc text-sm">
         {rows.map((r) => (
           <li key={r.email}>

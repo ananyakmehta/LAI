@@ -53,11 +53,11 @@ export function ViewAsControl({
   }
 
   return (
-    <div className="flex flex-wrap items-end gap-2 rounded border border-amber-300 bg-amber-50 p-3 text-sm">
+    <div className="flex flex-wrap items-end gap-2 rounded border border-rose bg-petal p-3 text-sm">
       <label className="flex flex-col gap-1">
         View as
         <select
-          className="rounded border p-1"
+          className="rounded border border-petal bg-white p-1"
           value={role}
           onChange={(e) => setRole(e.target.value as typeof role)}
         >
@@ -71,7 +71,7 @@ export function ViewAsControl({
         <>
           <label className="flex flex-col gap-1">
             Student
-            <select className="rounded border p-1" value={email} onChange={(e) => setEmail(e.target.value)}>
+            <select className="rounded border border-petal bg-white p-1" value={email} onChange={(e) => setEmail(e.target.value)}>
               <option value="">Select a student…</option>
               {rosterOptions.map((r) => (
                 <option key={r.email} value={r.email}>
@@ -83,7 +83,7 @@ export function ViewAsControl({
           <label className="flex flex-col gap-1">
             Wave time
             <select
-              className="rounded border p-1"
+              className="rounded border border-petal bg-white p-1"
               value={timePhase}
               onChange={(e) => setTimePhase(e.target.value as typeof timePhase)}
             >
@@ -98,7 +98,7 @@ export function ViewAsControl({
       {role === "teacher" && (
         <label className="flex flex-col gap-1">
           Trip
-          <select className="rounded border p-1" value={tripId} onChange={(e) => setTripId(e.target.value)}>
+          <select className="rounded border border-petal bg-white p-1" value={tripId} onChange={(e) => setTripId(e.target.value)}>
             <option value="">Select a trip…</option>
             {trips.map((t) => (
               <option key={t.id} value={t.id}>
@@ -116,7 +116,7 @@ export function ViewAsControl({
           (role === "student" && !email) ||
           (role === "teacher" && !tripId)
         }
-        className="rounded bg-gray-900 px-3 py-1 text-white disabled:opacity-40"
+        className="rounded bg-magenta px-3 py-1 text-white hover:bg-rose disabled:opacity-40"
       >
         Start
       </button>

@@ -56,7 +56,7 @@ export function AccessManagement({ roles, trips }: { roles: RoleRow[]; trips: Tr
     <div className="flex flex-col gap-4">
       <table className="w-full border-collapse text-left text-sm">
         <thead>
-          <tr className="border-b">
+          <tr className="border-b border-petal">
             <th className="py-2 pr-4">Email</th>
             <th className="py-2 pr-4">Role</th>
             <th className="py-2 pr-4">Trip</th>
@@ -79,11 +79,11 @@ export function AccessManagement({ roles, trips }: { roles: RoleRow[]; trips: Tr
         </tbody>
       </table>
 
-      <div className="flex flex-wrap items-end gap-2 rounded border p-3 text-sm">
+      <div className="flex flex-wrap items-end gap-2 rounded border border-petal bg-white p-3 text-sm">
         <label className="flex flex-col gap-1">
           Email
           <input
-            className="rounded border p-1"
+            className="rounded border border-petal bg-white p-1"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="someone@presentationhs.org"
@@ -92,7 +92,7 @@ export function AccessManagement({ roles, trips }: { roles: RoleRow[]; trips: Tr
         <label className="flex flex-col gap-1">
           Role
           <select
-            className="rounded border p-1"
+            className="rounded border border-petal bg-white p-1"
             value={role}
             onChange={(e) => setRole(e.target.value as typeof role)}
           >
@@ -104,7 +104,7 @@ export function AccessManagement({ roles, trips }: { roles: RoleRow[]; trips: Tr
         {role === "teacher" && (
           <label className="flex flex-col gap-1">
             Trip
-            <select className="rounded border p-1" value={tripId} onChange={(e) => setTripId(e.target.value)}>
+            <select className="rounded border border-petal bg-white p-1" value={tripId} onChange={(e) => setTripId(e.target.value)}>
               <option value="">Select a trip…</option>
               {trips.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -117,7 +117,7 @@ export function AccessManagement({ roles, trips }: { roles: RoleRow[]; trips: Tr
         <button
           onClick={handleGrant}
           disabled={!email || (role === "teacher" && !tripId) || status === "saving"}
-          className="rounded bg-gray-900 px-3 py-1 text-white disabled:opacity-40"
+          className="rounded bg-magenta px-3 py-1 text-white hover:bg-rose disabled:opacity-40"
         >
           Grant
         </button>

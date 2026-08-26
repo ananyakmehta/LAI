@@ -1,22 +1,29 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f1e4f3;
+  --foreground: #4a1942;
+
+  /* Palette — soft pink through vivid magenta, dark plum for text/accents. */
+  --color-mist: #d6d2d2;
+  --color-blush: #f1e4f3;
+  --color-petal: #f4bbd3;
+  --color-rose: #f686bd;
+  --color-magenta: #fe5d9f;
+  --color-plum: #4a1942;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-mist: var(--color-mist);
+  --color-blush: var(--color-blush);
+  --color-petal: var(--color-petal);
+  --color-rose: var(--color-rose);
+  --color-magenta: var(--color-magenta);
+  --color-plum: var(--color-plum);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {

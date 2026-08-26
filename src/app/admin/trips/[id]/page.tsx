@@ -28,17 +28,17 @@ export default async function TripRosterPage({
 
   return (
     <main className="mx-auto flex max-w-2xl flex-1 flex-col gap-4 p-8">
-      <Link href="/admin" className="text-sm text-gray-500 underline">
+      <Link href="/admin" className="text-sm text-plum/60 underline">
         &larr; back to dashboard
       </Link>
-      <h1 className="text-2xl font-semibold">{trip.name}</h1>
-      <p className="text-sm text-gray-600">
+      <h1 className="text-2xl font-semibold text-plum">{trip.name}</h1>
+      <p className="text-sm text-plum/70">
         {rows.length} / {trip.capacity} seats filled
       </p>
 
       <table className="w-full border-collapse text-left text-sm">
         <thead>
-          <tr className="border-b">
+          <tr className="border-b border-petal">
             <th className="py-2 pr-4">Name</th>
             <th className="py-2 pr-4">Email</th>
             <th className="py-2 pr-4">Grade</th>
@@ -47,7 +47,7 @@ export default async function TripRosterPage({
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={row.email} className="border-b">
+            <tr key={row.email} className="border-b border-petal">
               <td className="py-2 pr-4">{row.name}</td>
               <td className="py-2 pr-4">{row.email}</td>
               <td className="py-2 pr-4">{row.grade}</td>

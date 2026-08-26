@@ -11,8 +11,8 @@ export default async function HomePage() {
   if (!session?.user?.email) {
     return (
       <main className="mx-auto flex max-w-md flex-1 flex-col items-center justify-center gap-6 p-8 text-center">
-        <h1 className="text-2xl font-semibold">Learning in Action Day</h1>
-        <p className="text-sm text-gray-600">
+        <h1 className="text-2xl font-semibold text-plum">Learning in Action Day</h1>
+        <p className="text-sm text-plum/70">
           Sign in with your @presentationhs.org Google account to browse
           trips, submit your ranked choices, or upload your waiver.
         </p>
@@ -24,7 +24,7 @@ export default async function HomePage() {
         >
           <button
             type="submit"
-            className="rounded bg-gray-900 px-4 py-2 text-white hover:bg-gray-700"
+            className="rounded bg-magenta px-4 py-2 text-white hover:bg-rose"
           >
             Sign in with Google
           </button>
@@ -42,7 +42,7 @@ export default async function HomePage() {
 
   const header = (
     <div className="flex items-center justify-between">
-      <p className="text-sm text-gray-600">
+      <p className="text-sm text-plum/70">
         {session.user.email} ({ctx.role}
         {ctx.simulated ? ", simulated" : ""})
       </p>
@@ -52,7 +52,7 @@ export default async function HomePage() {
           await signOut();
         }}
       >
-        <button type="submit" className="text-sm text-gray-500 underline">
+        <button type="submit" className="text-sm text-plum/60 underline">
           Sign out
         </button>
       </form>

@@ -104,7 +104,7 @@ export function RosterRowActions({
     <div ref={containerRef} className="relative inline-block text-left">
       <button
         onClick={() => (open ? reset() : setOpen(true))}
-        className="rounded px-2 py-1 text-gray-500 hover:bg-gray-100"
+        className="rounded px-2 py-1 text-plum/60 hover:bg-petal"
         aria-label="Row actions"
         type="button"
       >
@@ -112,16 +112,16 @@ export function RosterRowActions({
       </button>
 
       {open && !moving && !viewingChoices && (
-        <div className="absolute right-0 z-10 mt-1 w-40 rounded border bg-white text-sm text-gray-900 shadow">
+        <div className="absolute right-0 z-10 mt-1 w-40 rounded border border-petal bg-white text-sm text-plum shadow">
           <button
-            className="block w-full px-3 py-2 text-left hover:bg-gray-50"
+            className="block w-full px-3 py-2 text-left hover:bg-petal"
             onClick={() => setMoving(true)}
             type="button"
           >
             Move
           </button>
           <button
-            className="block w-full px-3 py-2 text-left hover:bg-gray-50"
+            className="block w-full px-3 py-2 text-left hover:bg-petal"
             onClick={viewChoices}
             type="button"
           >
@@ -132,7 +132,7 @@ export function RosterRowActions({
       )}
 
       {open && viewingChoices && (
-        <div className="absolute right-0 z-10 mt-1 w-64 rounded border bg-white p-3 text-sm text-gray-900 shadow">
+        <div className="absolute right-0 z-10 mt-1 w-64 rounded border border-petal bg-white p-3 text-sm text-plum shadow">
           {choices === undefined && <p>Loading…</p>}
           {choices === null && <p>No submission yet.</p>}
           {choices && choices.optedOut && <p>Opted out.</p>}
@@ -144,18 +144,18 @@ export function RosterRowActions({
               <li>{tripName(choices.tripChoice4)}</li>
             </ol>
           )}
-          <button type="button" onClick={reset} className="mt-2 rounded border px-2 py-1">
+          <button type="button" onClick={reset} className="mt-2 rounded border border-rose px-2 py-1 hover:bg-petal">
             Close
           </button>
         </div>
       )}
 
       {open && moving && (
-        <div className="absolute right-0 z-10 mt-1 w-64 rounded border bg-white p-3 text-sm text-gray-900 shadow">
+        <div className="absolute right-0 z-10 mt-1 w-64 rounded border border-petal bg-white p-3 text-sm text-plum shadow">
           <label className="mb-2 block">
             Move to
             <select
-              className="mt-1 w-full rounded border p-1"
+              className="mt-1 w-full rounded border border-petal bg-white p-1"
               value={selectedTripId}
               onChange={(e) => {
                 setSelectedTripId(e.target.value);
@@ -189,11 +189,11 @@ export function RosterRowActions({
               type="button"
               disabled={!selectedTripId || status === "saving"}
               onClick={() => submitMove(status === "confirm")}
-              className="rounded bg-gray-900 px-2 py-1 text-white disabled:opacity-40"
+              className="rounded bg-magenta px-2 py-1 text-white hover:bg-rose disabled:opacity-40"
             >
               {status === "confirm" ? "Confirm overbook" : "Move"}
             </button>
-            <button type="button" onClick={reset} className="rounded border px-2 py-1">
+            <button type="button" onClick={reset} className="rounded border border-rose px-2 py-1 hover:bg-petal">
               Cancel
             </button>
           </div>

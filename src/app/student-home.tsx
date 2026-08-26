@@ -67,7 +67,7 @@ export function StudentHome({
   useEffect(reload, []);
 
   if (!trips || !status || !waiver) {
-    return <p className="p-8 text-sm text-gray-500">Loading…</p>;
+    return <p className="p-8 text-sm text-plum/60">Loading…</p>;
   }
 
   const state = deriveState(status);
@@ -98,9 +98,9 @@ export function StudentHome({
 function StateA({ trips, opensAt }: { trips: Trip[]; opensAt: string | null }) {
   return (
     <section>
-      <h2 className="mb-1 text-lg font-semibold">Trips</h2>
+      <h2 className="mb-1 text-lg font-semibold text-plum">Trips</h2>
       {opensAt && (
-        <p className="mb-3 text-sm text-gray-600">
+        <p className="mb-3 text-sm text-plum/70">
           Your grade&apos;s signup opens {new Date(opensAt).toLocaleString(undefined, {
             weekday: "long",
             hour: "numeric",
@@ -111,9 +111,9 @@ function StateA({ trips, opensAt }: { trips: Trip[]; opensAt: string | null }) {
       )}
       <ul className="flex flex-col gap-2 text-sm">
         {trips.map((t) => (
-          <li key={t.id} className="rounded border p-3">
-            <p className="font-medium">{t.name}</p>
-            <p className="text-gray-600">{t.description}</p>
+          <li key={t.id} className="rounded border border-petal bg-white p-3">
+            <p className="font-medium text-plum">{t.name}</p>
+            <p className="text-plum/70">{t.description}</p>
           </li>
         ))}
       </ul>
@@ -176,9 +176,9 @@ function StateB({
 
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="text-lg font-semibold">Your ranked choices</h2>
+      <h2 className="text-lg font-semibold text-plum">Your ranked choices</h2>
       {closesAt && (
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-plum/70">
           Submit by {new Date(closesAt).toLocaleString(undefined, {
             weekday: "long",
             hour: "numeric",
@@ -203,7 +203,7 @@ function StateB({
             <label key={i} className="flex flex-col gap-1 text-sm">
               Choice {i + 1}
               <select
-                className="rounded border p-2"
+                className="rounded border border-petal bg-white p-2"
                 value={choices[i] ?? ""}
                 onChange={(e) => setChoice(i, e.target.value)}
               >
@@ -223,7 +223,7 @@ function StateB({
       <button
         onClick={handleSubmit}
         disabled={!isComplete || hasDuplicates || saveState === "saving"}
-        className="w-fit rounded bg-gray-900 px-4 py-2 text-white disabled:opacity-40"
+        className="w-fit rounded bg-magenta px-4 py-2 text-white hover:bg-rose disabled:opacity-40"
       >
         {saveState === "saving" ? "Saving…" : "Save"}
       </button>
@@ -238,16 +238,16 @@ function StateB({
 /** Shown alongside the ranked-choice selection, per trip: name, chaperone, and description. */
 function TripOptions({ trips }: { trips: Trip[] }) {
   return (
-    <div className="mt-4 border-t pt-4">
-      <h3 className="mb-2 text-sm font-semibold">Trip options</h3>
+    <div className="mt-4 border-t border-petal pt-4">
+      <h3 className="mb-2 text-sm font-semibold text-plum">Trip options</h3>
       <ul className="flex flex-col gap-3 text-sm">
         {trips.map((t) => (
-          <li key={t.id} className="rounded border p-3">
-            <p className="font-medium">{t.name}</p>
-            <p className="text-gray-600">
+          <li key={t.id} className="rounded border border-petal bg-white p-3">
+            <p className="font-medium text-plum">{t.name}</p>
+            <p className="text-plum/70">
               Chaperone: {t.chaperoneTeacherEmail ?? "Not yet assigned"}
             </p>
-            <p className="text-gray-600">{t.description || "Description coming soon."}</p>
+            <p className="text-plum/70">{t.description || "Description coming soon."}</p>
           </li>
         ))}
       </ul>
@@ -258,7 +258,7 @@ function TripOptions({ trips }: { trips: Trip[] }) {
 function StateC() {
   return (
     <section>
-      <p className="text-sm text-gray-600">
+      <p className="text-sm text-plum/70">
         You&apos;re all set — results will be posted once sorting completes.
       </p>
     </section>
@@ -268,7 +268,7 @@ function StateC() {
 function StateUnplaced() {
   return (
     <section>
-      <p className="text-sm text-gray-600">
+      <p className="text-sm text-plum/70">
         Sorting has completed for your grade, but you don&apos;t have a trip assignment yet.
         Reach out to the event organizer.
       </p>
@@ -287,10 +287,10 @@ function StateD({
 }) {
   return (
     <section className="flex flex-col gap-2">
-      <h2 className="text-lg font-semibold">Your trip</h2>
-      <p className="text-xl">{assignment.tripName}</p>
+      <h2 className="text-lg font-semibold text-plum">Your trip</h2>
+      <p className="text-xl text-plum">{assignment.tripName}</p>
       {changeRequestVisible && (
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-plum/60">
           Need a change{changeRequestWindowEndsAt ? ` before ${new Date(changeRequestWindowEndsAt).toLocaleDateString()}` : ""}? Email the event organizer.
         </p>
       )}
@@ -322,16 +322,16 @@ function WaiverUpload({
   }
 
   return (
-    <section className="flex flex-col gap-2 border-t pt-4">
-      <h2 className="text-sm font-semibold">Waiver</h2>
-      <a href="/waiver-template.pdf" className="w-fit text-sm underline">
+    <section className="flex flex-col gap-2 border-t border-petal pt-4">
+      <h2 className="text-sm font-semibold text-plum">Waiver</h2>
+      <a href="/waiver-template.pdf" className="w-fit text-sm text-plum underline">
         Download the waiver form
       </a>
       <input type="file" accept="application/pdf" onChange={handleUpload} className="text-sm" />
-      {uploading && <p className="text-sm text-gray-600">Uploading…</p>}
+      {uploading && <p className="text-sm text-plum/70">Uploading…</p>}
       {error && <p className="text-sm text-red-600">Upload failed — make sure it&apos;s a PDF under 10MB.</p>}
       {waiver && <p className="text-sm text-green-700">Uploaded {new Date(waiver.uploadedAt).toLocaleString()}.</p>}
-      {!waiver && !uploading && <p className="text-sm text-gray-600">No waiver uploaded yet.</p>}
+      {!waiver && !uploading && <p className="text-sm text-plum/70">No waiver uploaded yet.</p>}
     </section>
   );
 }
