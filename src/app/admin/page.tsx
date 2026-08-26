@@ -8,6 +8,7 @@ import { getAdminRolesList } from "@/db/queries/access";
 import { RosterRowActions } from "./roster-row-actions";
 import { AccessManagement } from "./access-management";
 import { ViewAsControl } from "./view-as-control";
+import { SimulationPanel } from "./simulation-panel";
 import type { Grade } from "@/lib/grade";
 import Link from "next/link";
 
@@ -53,6 +54,7 @@ export default async function AdminPage({
   const adminRoles = isOwnerView ? await getAdminRolesList() : [];
 
   const showViewAsControl = ctx.realActor.role === "owner" && !ctx.simulated && roleSimulationEnabled();
+  const showSimulationPanel = ctx.realActor.role === "owner" && !ctx.simulated && roleSimulationEnabled();
 
   return (
     <main className="mx-auto flex max-w-5xl flex-1 flex-col gap-8 p-8">
@@ -218,6 +220,13 @@ export default async function AdminPage({
         <section>
           <h2 className="mb-2 text-lg font-semibold text-plum">Access management</h2>
           <AccessManagement roles={adminRoles} trips={tripOptions} />
+        </section>
+      )}
+
+      {showSimulationPanel && (
+        <section>
+          <h2 className="mb-2 text-lg font-semibold text-plum">Simulation controls</h2>
+          <SimulationPanel trips={tripOptions.map((t) => ({ id: t.id, name: t.name }))} />
         </section>
       )}
     </main>

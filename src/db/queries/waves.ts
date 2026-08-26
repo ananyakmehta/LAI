@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { waveSchedule } from "@/db/schema";
+import { waveSchedule, changeLog } from "@/db/schema";
 import type { Grade } from "@/lib/grade";
 import type { TimePhase } from "@/lib/view-context";
 
@@ -85,4 +85,89 @@ export function simulatedNowForPhase(
   if (phase === "before") return new Date(wave.opensAt.getTime() - PHASE_OFFSET_MS);
   if (phase === "after") return new Date(wave.closesAt.getTime() + PHASE_OFFSET_MS);
   return new Date((wave.opensAt.getTime() + wave.closesAt.getTime()) / 2);
+}
+
+export const WAVE_GRADE: Record<number, Grade> = {
+  1: "senior",
+  2: "junior",
+  3: "sophomore",
+  4: "freshman",
+};
+
+/**
+ * How long a manually-started wave (owner simulation control, see
+ * src/app/admin/simulation-panel.tsx) stays open before it would
+ * auto-close — deliberately generous so it never closes on its own
+ * mid-test; the owner closes it explicitly via endWaveNow.
+ */
+const MANUAL_WAVE_DURATION_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * How long after an owner clicks "End wave" the window actually closes —
+ * see endWaveNow's doc comment for why this can't be zero. Independent of
+ * GRACE_PERIOD_MS; not something to keep in sync with it.
+ */
+export const END_WAVE_BUFFER_MS = 20 * 1000;
+
+/**
+ * Owner-only simulation control: opens a wave right now, regardless of its
+ * previously configured dates — mirrors the CLI's `set-wave` but with the
+ * timestamps chosen for you (now -> now+24h) instead of typed out. Resets
+ * sortedAt so the wave reads as freshly opened for this test run.
+ */
+export async function startWaveNow(wave: number, who: string) {
+  const grade = WAVE_GRADE[wave];
+  if (!grade) throw new Error(`Wave must be 1-4, got ${wave}.`);
+
+  const opensAt = new Date();
+  const closesAt = new Date(opensAt.getTime() + MANUAL_WAVE_DURATION_MS);
+
+  await db.transaction(async (tx) => {
+    await tx
+      .insert(waveSchedule)
+      .values({ wave, grade, opensAt, closesAt, sortedAt: null })
+      .onConflictDoUpdate({
+        target: waveSchedule.wave,
+        set: { opensAt, closesAt, sortedAt: null },
+      });
+    await tx.insert(changeLog).values({
+      who,
+      action: "set_wave",
+      toTrip: `wave_${wave}:${opensAt.toISOString()}..${closesAt.toISOString()}`,
+    });
+  });
+
+  return { grade, opensAt, closesAt };
+}
+
+/**
+ * Owner-only simulation control: closes a wave with a short buffer rather
+ * than at the exact moment of the click — closesAt = now would still
+ * accept submissions for the next GRACE_PERIOD_MS (production: 5 minutes)
+ * via isSubmissionAccepted's grace window, which would make an "End wave"
+ * button feel broken during testing.
+ */
+export async function endWaveNow(wave: number, who: string) {
+  const grade = WAVE_GRADE[wave];
+  if (!grade) throw new Error(`Wave must be 1-4, got ${wave}.`);
+
+  const [existing] = await db
+    .select()
+    .from(waveSchedule)
+    .where(eq(waveSchedule.wave, wave))
+    .limit(1);
+  if (!existing) throw new Error(`Wave ${wave} (${grade}) hasn't been started yet.`);
+
+  const closesAt = new Date(Date.now() + END_WAVE_BUFFER_MS);
+
+  await db.transaction(async (tx) => {
+    await tx.update(waveSchedule).set({ closesAt }).where(eq(waveSchedule.wave, wave));
+    await tx.insert(changeLog).values({
+      who,
+      action: "set_wave",
+      toTrip: `wave_${wave}:closes_${closesAt.toISOString()}`,
+    });
+  });
+
+  return { grade, closesAt };
 }
