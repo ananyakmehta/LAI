@@ -18,7 +18,7 @@ interface TripOption {
 export function AccessManagement({ roles, trips }: { roles: RoleRow[]; trips: TripOption[] }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<"owner" | "staff_admin" | "teacher">("staff_admin");
+  const [role, setRole] = useState<"staff_admin" | "teacher">("staff_admin");
   const [tripId, setTripId] = useState("");
   const [status, setStatus] = useState<"idle" | "saving" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -98,7 +98,6 @@ export function AccessManagement({ roles, trips }: { roles: RoleRow[]; trips: Tr
           >
             <option value="staff_admin">staff_admin</option>
             <option value="teacher">teacher</option>
-            <option value="owner">owner</option>
           </select>
         </label>
         {role === "teacher" && (

@@ -64,6 +64,7 @@ function AssignRankingsControl({ trips }: { trips: TripOption[] }) {
   );
   const [status, setStatus] = useState<"idle" | "running" | "error">("idle");
   const [result, setResult] = useState<string | null>(null);
+  const totalWeight = trips.reduce((sum, t) => sum + (weights[t.id] ?? 0), 0);
 
   async function run() {
     setStatus("running");
@@ -125,7 +126,12 @@ function AssignRankingsControl({ trips }: { trips: TripOption[] }) {
             />
           </label>
           <div>
-            <p className="mb-1 text-plum">Percent distribution (relative weight per trip)</p>
+            <p className="mb-1 text-plum">
+              Percent distribution (relative weight per trip) — total:{" "}
+              <span className={totalWeight === 100 ? "text-green-700" : "text-red-600"}>
+                {totalWeight}%
+              </span>
+            </p>
             <div className="flex flex-wrap gap-3">
               {trips.map((t) => (
                 <label key={t.id} className="flex flex-col gap-1">
