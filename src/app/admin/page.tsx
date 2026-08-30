@@ -5,7 +5,8 @@ import { getMasterOverview, getNonResponders, getUnplacedSubmitters } from "@/db
 import { getTripsWithCounts } from "@/db/queries/trips";
 import { getRecentChangeLog } from "@/db/queries/change-log";
 import { getAdminRolesList } from "@/db/queries/access";
-import { RosterRowActions } from "./roster-row-actions";
+import { RosterPanel } from "./roster-panel";
+import { HeightMatchedRow } from "./height-matched-row";
 import { AccessManagement } from "./access-management";
 import { ViewAsControl } from "./view-as-control";
 import { SimulationPanel } from "./simulation-panel";
@@ -56,8 +57,11 @@ export default async function AdminPage({
   const showViewAsControl = ctx.realActor.role === "owner" && !ctx.simulated && roleSimulationEnabled();
   const showSimulationPanel = ctx.realActor.role === "owner" && !ctx.simulated && roleSimulationEnabled();
 
+  const nonRespondersGrouped = GRADES.map((g, i) => ({ grade: g, rows: nonResponders[i] ?? [] }));
+  const unplacedGrouped = GRADES.map((g, i) => ({ grade: g, rows: unplaced[i] ?? [] }));
+
   return (
-    <main className="mx-auto flex max-w-5xl flex-1 flex-col gap-8 p-8">
+    <main className="mx-auto flex w-full max-w-[1700px] flex-1 flex-col gap-8 px-6 py-8">
       <Link href="/" className="text-sm text-plum/60 underline">
         &larr; back
       </Link>
@@ -104,40 +108,13 @@ export default async function AdminPage({
           </a>
         </form>
 
-        <table className="w-full border-collapse text-left text-sm">
-          <thead>
-            <tr className="border-b border-petal">
-              <th className="py-2 pr-4">Name</th>
-              <th className="py-2 pr-4">Email</th>
-              <th className="py-2 pr-4">Grade</th>
-              <th className="py-2 pr-4">Submission</th>
-              <th className="py-2 pr-4">Waiver</th>
-              <th className="py-2 pr-4">Assigned trip</th>
-              {canMove && <th className="py-2 pr-4"></th>}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.email} className="border-b border-petal">
-                <td className="py-2 pr-4">{row.name}</td>
-                <td className="py-2 pr-4">{row.email}</td>
-                <td className="py-2 pr-4">{row.grade}</td>
-                <td className="py-2 pr-4">{row.submissionStatus}</td>
-                <td className="py-2 pr-4">{row.waiverUploadedAt ? "uploaded" : "—"}</td>
-                <td className="py-2 pr-4">{row.assignedTripName ?? "—"}</td>
-                {canMove && (
-                  <td className="py-2 text-right">
-                    <RosterRowActions
-                      studentEmail={row.email}
-                      currentTripId={row.assignedTripId}
-                      trips={tripOptions}
-                    />
-                  </td>
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <RosterPanel
+          rows={rows}
+          canMove={canMove}
+          tripOptions={tripOptions}
+          nonResponders={nonRespondersGrouped}
+          unplaced={unplacedGrouped}
+        />
       </section>
 
       <section>
@@ -168,89 +145,55 @@ export default async function AdminPage({
         </table>
       </section>
 
-      {showNonResponders && (
-        <section>
-          <h2 className="text-lg font-semibold text-plum">Actions</h2>
-          <div className="mt-2">
-            <h3 className="text-sm font-medium text-plum">Non-responders (need manual placement)</h3>
-            {GRADES.map((g, i) => (
-              <FlagList key={g} grade={g} rows={nonResponders[i]} />
-            ))}
-          </div>
-          <div className="mt-4">
-            <h3 className="text-sm font-medium text-plum">Submitted but unplaced (all 4 choices were full)</h3>
-            {GRADES.map((g, i) => (
-              <FlagList key={g} grade={g} rows={unplaced[i]} />
-            ))}
-          </div>
-
-          {isOwnerView && (
-            <div className="mt-4">
-              <h3 className="text-sm font-medium text-plum">Change log</h3>
-              <table className="w-full border-collapse text-left text-sm">
-                <thead>
-                  <tr className="border-b border-petal">
-                    <th className="py-2 pr-4">When</th>
-                    <th className="py-2 pr-4">Who</th>
-                    <th className="py-2 pr-4">Action</th>
-                    <th className="py-2 pr-4">Student</th>
-                    <th className="py-2 pr-4">From</th>
-                    <th className="py-2 pr-4">To</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {changeLog.map((c) => (
-                    <tr key={c.id} className="border-b border-petal">
-                      <td className="py-2 pr-4">{c.timestamp.toLocaleString()}</td>
-                      <td className="py-2 pr-4">{c.who}</td>
-                      <td className="py-2 pr-4">{c.action}</td>
-                      <td className="py-2 pr-4">{c.studentEmail ?? "—"}</td>
-                      <td className="py-2 pr-4">{c.fromTrip ?? "—"}</td>
-                      <td className="py-2 pr-4">{c.toTrip ?? "—"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-      )}
-
       {isOwnerView && (
         <section>
-          <h2 className="mb-2 text-lg font-semibold text-plum">Access management</h2>
-          <AccessManagement roles={adminRoles} trips={tripOptions} />
-        </section>
-      )}
-
-      {showSimulationPanel && (
-        <section>
-          <h2 className="mb-2 text-lg font-semibold text-plum">Simulation controls</h2>
-          <SimulationPanel trips={tripOptions.map((t) => ({ id: t.id, name: t.name }))} />
+          <HeightMatchedRow
+            left={
+              <>
+                <h2 className="p-2 pb-1 text-lg font-semibold text-plum">Change log</h2>
+                <table className="w-full border-collapse text-left text-sm">
+                  <thead>
+                    <tr className="sticky top-0 z-10 border-b border-petal bg-white">
+                      <th className="py-2 pr-4 pl-2">When</th>
+                      <th className="py-2 pr-4">Who</th>
+                      <th className="py-2 pr-4">Action</th>
+                      <th className="py-2 pr-4">Student</th>
+                      <th className="py-2 pr-4">From</th>
+                      <th className="py-2 pr-4">To</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {changeLog.map((c) => (
+                      <tr key={c.id} className="border-b border-petal">
+                        <td className="py-2 pr-4 pl-2">{c.timestamp.toLocaleString()}</td>
+                        <td className="py-2 pr-4">{c.who}</td>
+                        <td className="py-2 pr-4">{c.action}</td>
+                        <td className="py-2 pr-4">{c.studentEmail ?? "—"}</td>
+                        <td className="py-2 pr-4">{c.fromTrip ?? "—"}</td>
+                        <td className="py-2 pr-4">{c.toTrip ?? "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            }
+            right={
+              <>
+                {showSimulationPanel && (
+                  <div>
+                    <h2 className="mb-2 text-lg font-semibold text-plum">Simulation controls</h2>
+                    <SimulationPanel trips={tripOptions.map((t) => ({ id: t.id, name: t.name }))} />
+                  </div>
+                )}
+                <div>
+                  <h2 className="mb-2 text-lg font-semibold text-plum">Access management</h2>
+                  <AccessManagement roles={adminRoles} trips={tripOptions} />
+                </div>
+              </>
+            }
+          />
         </section>
       )}
     </main>
-  );
-}
-
-function FlagList({
-  grade,
-  rows,
-}: {
-  grade: string;
-  rows: { name: string; email: string; notes: string }[];
-}) {
-  if (rows.length === 0) return null;
-  return (
-    <div className="mt-2">
-      <p className="text-sm font-medium capitalize text-plum">{grade}</p>
-      <ul className="list-inside list-disc text-sm">
-        {rows.map((r) => (
-          <li key={r.email}>
-            {r.name} ({r.email}){r.notes ? ` — notes: ${r.notes}` : ""}
-          </li>
-        ))}
-      </ul>
-    </div>
   );
 }
