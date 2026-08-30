@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { db } from "@/db/client";
 import { assignments, changeLog, submissions, trips, waveSchedule } from "@/db/schema";
 
@@ -46,6 +46,68 @@ export async function moveStudentToTrip(
   });
 
   return { fromTripId: existing?.tripId ?? null };
+}
+
+/**
+ * Bulk version of the CLI's `assign-non-responder` for the per-trip roster
+ * page's "Non-responders" checklist — same manual_non_responder_placement /
+ * assign_non_responder path, just for many students against one trip in a
+ * single transaction. The page only offers non-responders who ALSO don't
+ * have an assignment yet (getUnassignedNonResponders), so under normal use
+ * there's no existing row to worry about — the check below is a backstop
+ * against a stale page (another tab/admin placed one of these students in
+ * the meantime), giving a clear error instead of a raw constraint failure.
+ *
+ * Hard-blocks over capacity rather than offering a force override — the
+ * page's own UI already disables its "Move here" button once the
+ * selection would exceed remaining seats, so this check is a server-side
+ * backstop, not a second confirmation step like the general Move tool's.
+ */
+export async function assignNonRespondersToTrip(
+  emails: string[],
+  tripId: string,
+  who: string,
+): Promise<{ assigned: number }> {
+  return db.transaction(async (tx) => {
+    const [trip] = await tx.select().from(trips).where(eq(trips.id, tripId)).limit(1);
+    if (!trip) throw new Error("Trip not found.");
+
+    const alreadyAssigned = await tx
+      .select({ studentEmail: assignments.studentEmail })
+      .from(assignments)
+      .where(inArray(assignments.studentEmail, emails));
+    if (alreadyAssigned.length > 0) {
+      throw new Error(
+        `${alreadyAssigned.map((a) => a.studentEmail).join(", ")} already has an assignment — refresh the page and try again.`,
+      );
+    }
+
+    const currentAssignments = await tx
+      .select()
+      .from(assignments)
+      .where(eq(assignments.tripId, tripId));
+    if (currentAssignments.length + emails.length > trip.capacity) {
+      throw new Error(
+        `Not enough seats: ${trip.name} has ${trip.capacity - currentAssignments.length} left, tried to place ${emails.length}.`,
+      );
+    }
+
+    for (const email of emails) {
+      await tx.insert(assignments).values({
+        studentEmail: email,
+        tripId,
+        assignmentMethod: "manual_non_responder_placement",
+      });
+      await tx.insert(changeLog).values({
+        who,
+        action: "assign_non_responder",
+        studentEmail: email,
+        toTrip: tripId,
+      });
+    }
+
+    return { assigned: emails.length };
+  });
 }
 
 /**

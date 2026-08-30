@@ -51,6 +51,35 @@ export async function getNonResponders(grade: Grade) {
 }
 
 /**
+ * Non-responders (roster MINUS submissions, per §3's definition — same as
+ * getNonResponders) who ALSO don't have an assignment yet. Used by the
+ * per-trip roster page's "Move here" checklist: offering an already-placed
+ * non-responder there would try to insert a second assignments row for
+ * them and hit the unique constraint. getNonResponders itself keeps the
+ * broader, doc-defined meaning (no submission, regardless of assignment
+ * status) for the main dashboard's list — this is a narrower filter for
+ * this one specific action, not a redefinition of "non-responder."
+ */
+export async function getUnassignedNonResponders(grade: Grade) {
+  return db
+    .select({
+      name: roster.name,
+      email: roster.email,
+      notes: roster.notes,
+    })
+    .from(roster)
+    .leftJoin(submissions, eq(submissions.studentEmail, roster.email))
+    .leftJoin(assignments, eq(assignments.studentEmail, roster.email))
+    .where(
+      and(
+        eq(roster.grade, grade),
+        isNull(submissions.studentEmail),
+        isNull(assignments.studentEmail),
+      ),
+    );
+}
+
+/**
  * Submitted but not assigned after their wave's lottery ran — distinct from
  * non-responders (§3): these students DID participate, but all 4 choices
  * were full by their turn. Surfaced separately for the owner's attention.

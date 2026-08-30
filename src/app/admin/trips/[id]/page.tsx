@@ -1,9 +1,13 @@
 import { redirect } from "next/navigation";
 import { getViewContext } from "@/lib/view-context";
 import { can, type Actor } from "@/lib/permissions";
-import { getMasterOverview } from "@/db/queries/dashboard";
+import { getMasterOverview, getUnassignedNonResponders } from "@/db/queries/dashboard";
 import { getTripById } from "@/db/queries/trips";
+import { MoveNonRespondersPanel } from "./move-non-responders-panel";
+import type { Grade } from "@/lib/grade";
 import Link from "next/link";
+
+const GRADES: Grade[] = ["senior", "junior", "sophomore", "freshman"];
 
 export default async function TripRosterPage({
   params,
@@ -25,6 +29,11 @@ export default async function TripRosterPage({
   const rows = (await getMasterOverview(tripId)).filter(
     (r) => r.assignedTripId === tripId,
   );
+
+  const canMove = can.moveAnyStudent(actor);
+  const nonRespondersGrouped = canMove
+    ? await Promise.all(GRADES.map(async (g) => ({ grade: g, rows: await getUnassignedNonResponders(g) })))
+    : [];
 
   return (
     <main className="mx-auto flex max-w-2xl flex-1 flex-col gap-4 p-8">
@@ -56,6 +65,16 @@ export default async function TripRosterPage({
           ))}
         </tbody>
       </table>
+
+      {canMove && (
+        <MoveNonRespondersPanel
+          tripId={trip.id}
+          tripName={trip.name}
+          capacity={trip.capacity}
+          filled={rows.length}
+          nonResponders={nonRespondersGrouped}
+        />
+      )}
     </main>
   );
 }
