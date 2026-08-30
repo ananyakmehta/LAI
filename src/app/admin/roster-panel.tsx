@@ -6,11 +6,17 @@ import { RosterRowActions } from "./roster-row-actions";
 /** How much taller than the flagged-lists column the roster box should be — enough to visibly read as "a bit more room," not an exact match. */
 const EXTRA_HEIGHT_PX = 48;
 
+/** Floor for the roster box's height so it never scales down into nothing as flagged lists empty out — ~6 full rows plus half of a 7th. */
+const MIN_ROSTER_HEIGHT_PX = 335;
+
+/** Cap on the "No waiver" block's own inner scroll — it can be most of the roster early on, so it gets its own scrollable box instead of stretching the whole column. ~7 lines plus a bit of an 8th. */
+const NO_WAIVER_MAX_HEIGHT_PX = 165;
+
 interface RosterRow {
   name: string;
   email: string;
   grade: string;
-  submissionStatus: "none" | "opted_out" | "submitted";
+  submissionStatus: "none" | "opted_out" | "submitted" | "MANUAL";
   waiverUploadedAt: Date | null;
   assignedTripId: string | null;
   assignedTripName: string | null;
@@ -36,12 +42,31 @@ const GRADE_LABELS: Record<string, string> = {
   freshman: "Freshman",
 };
 
+type SectionKey = "nonResponders" | "optedOut" | "unplaced" | "noWaiver";
+
+const SECTION_LABELS: Record<SectionKey, string> = {
+  nonResponders: "Non-responders",
+  optedOut: "Opt-outs",
+  unplaced: "Submitted but unplaced",
+  noWaiver: "No waiver",
+};
+
+// "No waiver" starts hidden — it can be most of the roster early on, so it's
+// opt-in rather than shown by default like the other three, which were
+// already always visible before this display control existed.
+const DEFAULT_VISIBLE: Record<SectionKey, boolean> = {
+  nonResponders: true,
+  optedOut: true,
+  unplaced: true,
+  noWaiver: false,
+};
+
 /**
- * Roster overview (left 60%, scrollable to ~7 rows) paired with the
- * flagged-student lists (right 40%) — one client component because
- * clicking a name in either flagged list needs to scroll the roster box
- * to that student's row and flash it, which means both sides share state
- * (highlightedEmail) that a server component can't hold.
+ * Roster overview (left 60%, scrollable) paired with the flagged-student
+ * lists (right 40%) — one client component because clicking a name in any
+ * flagged list needs to scroll the roster box to that student's row and
+ * flash it, which means both sides share state (highlightedEmail) that a
+ * server component can't hold.
  */
 export function RosterPanel({
   rows,
@@ -49,6 +74,7 @@ export function RosterPanel({
   tripOptions,
   nonResponders,
   optedOut,
+  missingWaivers,
   unplaced,
 }: {
   rows: RosterRow[];
@@ -56,22 +82,25 @@ export function RosterPanel({
   tripOptions: TripOption[];
   nonResponders: { grade: string; rows: FlaggedRow[] }[];
   optedOut: { grade: string; rows: FlaggedRow[] }[];
+  missingWaivers: { grade: string; rows: FlaggedRow[] }[];
   unplaced: { grade: string; rows: FlaggedRow[] }[];
 }) {
   const [highlighted, setHighlighted] = useState<string | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flaggedColRef = useRef<HTMLDivElement>(null);
-  const [rosterMaxHeight, setRosterMaxHeight] = useState<number | null>(null);
+  const [rosterMaxHeight, setRosterMaxHeight] = useState<number>(MIN_ROSTER_HEIGHT_PX);
+  const [visible, setVisible] = useState<Record<SectionKey, boolean>>(DEFAULT_VISIBLE);
+  const [displayOpen, setDisplayOpen] = useState(false);
 
   // The roster box should read as "a bit more room" than the flagged-lists
-  // column next to it, not an exact height match (see HeightMatchedRow,
-  // used elsewhere on this page, for the exact-match version of this same
-  // ResizeObserver trick).
+  // column next to it, not an exact height match — but never smaller than
+  // MIN_ROSTER_HEIGHT_PX, so it doesn't scale down into nothing once
+  // students get placed and the flagged lists shrink or empty out.
   useEffect(() => {
     const el = flaggedColRef.current;
     if (!el) return;
     const observer = new ResizeObserver((entries) => {
-      setRosterMaxHeight(entries[0].contentRect.height + EXTRA_HEIGHT_PX);
+      setRosterMaxHeight(Math.max(entries[0].contentRect.height + EXTRA_HEIGHT_PX, MIN_ROSTER_HEIGHT_PX));
     });
     observer.observe(el);
     return () => observer.disconnect();
@@ -90,8 +119,8 @@ export function RosterPanel({
   return (
     <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[3fr_2fr]">
       <div
-        style={rosterMaxHeight ? { maxHeight: rosterMaxHeight } : undefined}
-        className="max-h-[345px] overflow-y-auto rounded border border-petal bg-white"
+        style={{ maxHeight: rosterMaxHeight }}
+        className="overflow-y-auto rounded border border-petal bg-white"
       >
         <table className="w-full border-collapse text-left text-sm">
           <thead>
@@ -136,18 +165,61 @@ export function RosterPanel({
       </div>
 
       <div ref={flaggedColRef} className="flex flex-col gap-4 text-sm">
-        <div>
-          <h3 className="mb-1 font-medium text-plum">Non-responders (need manual placement)</h3>
-          <FlaggedList groups={nonResponders} onClickName={scrollToStudent} />
+        <div className="rounded border border-petal bg-white p-3">
+          <button
+            type="button"
+            onClick={() => setDisplayOpen((v) => !v)}
+            className="flex w-full items-center justify-between text-left font-medium text-plum"
+          >
+            Display
+            <span className="text-plum/60">{displayOpen ? "▴" : "▾"}</span>
+          </button>
+          {displayOpen && (
+            <div className="mt-2 flex flex-col gap-1 border-t border-petal pt-2">
+              {(Object.keys(SECTION_LABELS) as SectionKey[]).map((key) => (
+                <label key={key} className="flex cursor-pointer items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={visible[key]}
+                    onChange={() => setVisible((v) => ({ ...v, [key]: !v[key] }))}
+                    className="accent-magenta"
+                  />
+                  <span>{SECTION_LABELS[key]}</span>
+                </label>
+              ))}
+            </div>
+          )}
         </div>
-        <div>
-          <h3 className="mb-1 font-medium text-plum">Opted out</h3>
-          <FlaggedList groups={optedOut} onClickName={scrollToStudent} />
-        </div>
-        <div>
-          <h3 className="mb-1 font-medium text-plum">Submitted but unplaced (all 4 choices were full)</h3>
-          <FlaggedList groups={unplaced} onClickName={scrollToStudent} />
-        </div>
+
+        {visible.nonResponders && (
+          <div className="rounded border border-petal bg-white p-3">
+            <h3 className="mb-1 font-medium text-plum">Non-responders (need manual placement)</h3>
+            <FlaggedList groups={nonResponders} onClickName={scrollToStudent} />
+          </div>
+        )}
+
+        {visible.optedOut && (
+          <div className="rounded border border-petal bg-white p-3">
+            <h3 className="mb-1 font-medium text-plum">Opted out</h3>
+            <FlaggedList groups={optedOut} onClickName={scrollToStudent} />
+          </div>
+        )}
+
+        {visible.unplaced && (
+          <div className="rounded border border-petal bg-white p-3">
+            <h3 className="mb-1 font-medium text-plum">Submitted but unplaced (all 4 choices were full)</h3>
+            <FlaggedList groups={unplaced} onClickName={scrollToStudent} />
+          </div>
+        )}
+
+        {visible.noWaiver && (
+          <div className="rounded border border-petal bg-white p-3">
+            <h3 className="mb-1 font-medium text-plum">No waiver</h3>
+            <div style={{ maxHeight: NO_WAIVER_MAX_HEIGHT_PX }} className="overflow-y-auto">
+              <FlaggedList groups={missingWaivers} onClickName={scrollToStudent} />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

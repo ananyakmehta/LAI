@@ -16,11 +16,12 @@ export async function getMasterOverview(tripId?: string) {
       email: roster.email,
       grade: roster.grade,
       notes: roster.notes,
-      submissionStatus: sql<"none" | "opted_out" | "submitted">`
+      submissionStatus: sql<"none" | "opted_out" | "submitted" | "MANUAL">`
         case
-          when ${submissions.studentEmail} is null then 'none'
-          when ${submissions.optedOut} then 'opted_out'
-          else 'submitted'
+          when ${submissions.studentEmail} is not null and ${submissions.optedOut} then 'opted_out'
+          when ${submissions.studentEmail} is not null then 'submitted'
+          when ${assignments.studentEmail} is not null then 'MANUAL'
+          else 'none'
         end
       `,
       waiverUploadedAt: waivers.uploadedAt,
@@ -37,28 +38,15 @@ export async function getMasterOverview(tripId?: string) {
   return tripId ? rows.filter((r) => r.assignedTripId === tripId) : rows;
 }
 
-/** roster MINUS submissions, restricted to one grade — §3's non-responders. */
-export async function getNonResponders(grade: Grade) {
-  return db
-    .select({
-      name: roster.name,
-      email: roster.email,
-      notes: roster.notes,
-    })
-    .from(roster)
-    .leftJoin(submissions, eq(submissions.studentEmail, roster.email))
-    .where(and(eq(roster.grade, grade), isNull(submissions.studentEmail)));
-}
-
 /**
- * Non-responders (roster MINUS submissions, per §3's definition — same as
- * getNonResponders) who ALSO don't have an assignment yet. Used by the
- * per-trip roster page's "Move here" checklist: offering an already-placed
- * non-responder there would try to insert a second assignments row for
- * them and hit the unique constraint. getNonResponders itself keeps the
- * broader, doc-defined meaning (no submission, regardless of assignment
- * status) for the main dashboard's list — this is a narrower filter for
- * this one specific action, not a redefinition of "non-responder."
+ * Non-responders (roster MINUS submissions, §3) who ALSO don't have an
+ * assignment yet. A student can be manually placed without ever
+ * submitting (the trip page's "Move here" checklist, or the CLI's
+ * assign-non-responder), and once that happens they no longer need
+ * manual placement — showing them here anyway would offer a student the
+ * "Move here" checklist can't actually place (unique constraint on
+ * assignments.studentEmail) and would leave them stuck in the roster
+ * overview's "Non-responders" list after being handled. Used by both.
  */
 export async function getUnassignedNonResponders(grade: Grade) {
   return db
@@ -97,6 +85,25 @@ export async function getOptedOut(grade: Grade) {
     .from(roster)
     .innerJoin(submissions, eq(submissions.studentEmail, roster.email))
     .where(and(eq(roster.grade, grade), eq(submissions.optedOut, true)));
+}
+
+/**
+ * Roster MINUS waivers, restricted to one grade — waiver upload is
+ * tracked independently of ranking submission (§3), so this can include
+ * students who already submitted or were manually placed. Rendered as its
+ * own scrollable block on the roster overview rather than an unbounded
+ * list, since early in the process this can be most of the roster.
+ */
+export async function getMissingWaivers(grade: Grade) {
+  return db
+    .select({
+      name: roster.name,
+      email: roster.email,
+      notes: roster.notes,
+    })
+    .from(roster)
+    .leftJoin(waivers, eq(waivers.studentEmail, roster.email))
+    .where(and(eq(roster.grade, grade), isNull(waivers.studentEmail)));
 }
 
 /**

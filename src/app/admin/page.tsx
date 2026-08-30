@@ -1,7 +1,13 @@
 import { redirect } from "next/navigation";
 import { getViewContext, roleSimulationEnabled } from "@/lib/view-context";
 import { can, type Actor } from "@/lib/permissions";
-import { getMasterOverview, getNonResponders, getOptedOut, getUnplacedSubmitters } from "@/db/queries/dashboard";
+import {
+  getMasterOverview,
+  getUnassignedNonResponders,
+  getOptedOut,
+  getMissingWaivers,
+  getUnplacedSubmitters,
+} from "@/db/queries/dashboard";
 import { getTripsWithCounts } from "@/db/queries/trips";
 import { getRecentChangeLog } from "@/db/queries/change-log";
 import { getAdminRolesList } from "@/db/queries/access";
@@ -41,10 +47,13 @@ export default async function AdminPage({
 
   const showNonResponders = can.viewNonResponders(actor);
   const nonResponders = showNonResponders
-    ? await Promise.all(GRADES.map((g) => getNonResponders(g)))
+    ? await Promise.all(GRADES.map((g) => getUnassignedNonResponders(g)))
     : [];
   const optedOut = showNonResponders
     ? await Promise.all(GRADES.map((g) => getOptedOut(g)))
+    : [];
+  const missingWaivers = showNonResponders
+    ? await Promise.all(GRADES.map((g) => getMissingWaivers(g)))
     : [];
   const unplaced = showNonResponders
     ? await Promise.all(GRADES.map((g) => getUnplacedSubmitters(g)))
@@ -62,6 +71,7 @@ export default async function AdminPage({
 
   const nonRespondersGrouped = GRADES.map((g, i) => ({ grade: g, rows: nonResponders[i] ?? [] }));
   const optedOutGrouped = GRADES.map((g, i) => ({ grade: g, rows: optedOut[i] ?? [] }));
+  const missingWaiversGrouped = GRADES.map((g, i) => ({ grade: g, rows: missingWaivers[i] ?? [] }));
   const unplacedGrouped = GRADES.map((g, i) => ({ grade: g, rows: unplaced[i] ?? [] }));
 
   return (
@@ -118,6 +128,7 @@ export default async function AdminPage({
           tripOptions={tripOptions}
           nonResponders={nonRespondersGrouped}
           optedOut={optedOutGrouped}
+          missingWaivers={missingWaiversGrouped}
           unplaced={unplacedGrouped}
         />
       </section>
