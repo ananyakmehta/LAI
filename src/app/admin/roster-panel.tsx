@@ -1,7 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { RosterRowActions } from "./roster-row-actions";
+
+/** How much taller than the flagged-lists column the roster box should be — enough to visibly read as "a bit more room," not an exact match. */
+const EXTRA_HEIGHT_PX = 48;
 
 interface RosterRow {
   name: string;
@@ -55,6 +58,22 @@ export function RosterPanel({
 }) {
   const [highlighted, setHighlighted] = useState<string | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flaggedColRef = useRef<HTMLDivElement>(null);
+  const [rosterMaxHeight, setRosterMaxHeight] = useState<number | null>(null);
+
+  // The roster box should read as "a bit more room" than the flagged-lists
+  // column next to it, not an exact height match (see HeightMatchedRow,
+  // used elsewhere on this page, for the exact-match version of this same
+  // ResizeObserver trick).
+  useEffect(() => {
+    const el = flaggedColRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      setRosterMaxHeight(entries[0].contentRect.height + EXTRA_HEIGHT_PX);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   function scrollToStudent(email: string) {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -68,7 +87,10 @@ export function RosterPanel({
 
   return (
     <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[3fr_2fr]">
-      <div className="max-h-[345px] overflow-y-auto rounded border border-petal bg-white">
+      <div
+        style={rosterMaxHeight ? { maxHeight: rosterMaxHeight } : undefined}
+        className="max-h-[345px] overflow-y-auto rounded border border-petal bg-white"
+      >
         <table className="w-full border-collapse text-left text-sm">
           <thead>
             <tr className="sticky top-0 z-10 border-b border-petal bg-white">
@@ -111,7 +133,7 @@ export function RosterPanel({
         </table>
       </div>
 
-      <div className="flex flex-col gap-4 text-sm">
+      <div ref={flaggedColRef} className="flex flex-col gap-4 text-sm">
         <div>
           <h3 className="mb-1 font-medium text-plum">Non-responders (need manual placement)</h3>
           <FlaggedList groups={nonResponders} onClickName={scrollToStudent} />

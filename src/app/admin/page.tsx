@@ -151,26 +151,26 @@ export default async function AdminPage({
             left={
               <>
                 <h2 className="p-2 pb-1 text-lg font-semibold text-plum">Change log</h2>
-                <table className="w-full border-collapse text-left text-sm">
+                <table className="w-full table-fixed border-collapse text-left text-sm">
                   <thead>
                     <tr className="sticky top-0 z-10 border-b border-petal bg-white">
-                      <th className="py-2 pr-4 pl-2">When</th>
-                      <th className="py-2 pr-4">Who</th>
-                      <th className="py-2 pr-4">Action</th>
-                      <th className="py-2 pr-4">Student</th>
-                      <th className="py-2 pr-4">From</th>
-                      <th className="py-2 pr-4">To</th>
+                      <th className="w-[15%] py-2 pr-4 pl-2">When</th>
+                      <th className="w-[20%] py-2 pr-4">Who</th>
+                      <th className="w-[10%] py-2 pr-4">Action</th>
+                      <th className="w-[20%] py-2 pr-4">Student</th>
+                      <th className="w-[12%] py-2 pr-4">From</th>
+                      <th className="w-[23%] py-2 pr-2">To</th>
                     </tr>
                   </thead>
                   <tbody>
                     {changeLog.map((c) => (
                       <tr key={c.id} className="border-b border-petal">
                         <td className="py-2 pr-4 pl-2">{c.timestamp.toLocaleString()}</td>
-                        <td className="py-2 pr-4">{c.who}</td>
-                        <td className="py-2 pr-4">{c.action}</td>
-                        <td className="py-2 pr-4">{c.studentEmail ?? "—"}</td>
-                        <td className="py-2 pr-4">{c.fromTrip ?? "—"}</td>
-                        <td className="py-2 pr-4">{c.toTrip ?? "—"}</td>
+                        <td className="break-all py-2 pr-4">{c.who}</td>
+                        <td className="break-all py-2 pr-4">{c.action}</td>
+                        <td className="break-all py-2 pr-4">{c.studentEmail ?? "—"}</td>
+                        <td className="break-all py-2 pr-4">{c.fromTrip ?? "—"}</td>
+                        <td className="break-all py-2 pr-2">{c.toTrip ?? "—"}</td>
                       </tr>
                     ))}
                   </tbody>
