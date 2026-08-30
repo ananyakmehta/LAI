@@ -48,12 +48,14 @@ export function RosterPanel({
   canMove,
   tripOptions,
   nonResponders,
+  optedOut,
   unplaced,
 }: {
   rows: RosterRow[];
   canMove: boolean;
   tripOptions: TripOption[];
   nonResponders: { grade: string; rows: FlaggedRow[] }[];
+  optedOut: { grade: string; rows: FlaggedRow[] }[];
   unplaced: { grade: string; rows: FlaggedRow[] }[];
 }) {
   const [highlighted, setHighlighted] = useState<string | null>(null);
@@ -137,6 +139,10 @@ export function RosterPanel({
         <div>
           <h3 className="mb-1 font-medium text-plum">Non-responders (need manual placement)</h3>
           <FlaggedList groups={nonResponders} onClickName={scrollToStudent} />
+        </div>
+        <div>
+          <h3 className="mb-1 font-medium text-plum">Opted out</h3>
+          <FlaggedList groups={optedOut} onClickName={scrollToStudent} />
         </div>
         <div>
           <h3 className="mb-1 font-medium text-plum">Submitted but unplaced (all 4 choices were full)</h3>

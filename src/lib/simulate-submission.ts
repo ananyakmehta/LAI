@@ -1,16 +1,17 @@
 /**
- * Submits one student's ranking through the REAL POST /api/submissions
- * route — same zod validation and wave-gating (isSubmissionAccepted) a
- * browser submission goes through, not a direct DB write — via the same
- * SIMULATION_SECRET header bypass the standalone load-test scripts use
- * (see scripts/simulate-wave-cycle.ts's submitFor). Used by the admin
- * "assign random rankings" simulation control so bulk test submissions
- * exercise the student-side process as faithfully as a single manual one.
+ * Submits one student's ranking (or opt-out) through the REAL POST
+ * /api/submissions route — same zod validation and wave-gating
+ * (isSubmissionAccepted) a browser submission goes through, not a direct
+ * DB write — via the same SIMULATION_SECRET header bypass the standalone
+ * load-test scripts use (see scripts/simulate-wave-cycle.ts's submitFor).
+ * Used by the admin "assign random rankings" simulation control so bulk
+ * test submissions exercise the student-side process as faithfully as a
+ * single manual one.
  */
 export async function submitSimulatedRanking(
   origin: string,
   email: string,
-  tripIds: string[],
+  body: { optedOut: true } | { optedOut: false; choices: string[] },
 ): Promise<{ ok: boolean; status: number; error?: string }> {
   const secret = process.env.SIMULATION_SECRET;
   if (!secret) {
@@ -24,7 +25,7 @@ export async function submitSimulatedRanking(
       "x-simulation-secret": secret,
       "x-simulation-email": email,
     },
-    body: JSON.stringify({ optedOut: false, choices: tripIds }),
+    body: JSON.stringify(body),
   });
 
   if (res.ok) return { ok: true, status: res.status };

@@ -12,6 +12,7 @@ import { submitSimulatedRanking } from "@/lib/simulate-submission";
 const bodySchema = z.object({
   grade: z.enum(["senior", "junior", "sophomore", "freshman"]),
   nonResponderCount: z.number().int().min(0).default(0),
+  optOutCount: z.number().int().min(0).default(0),
   weights: z.record(z.string(), z.number().min(0)).optional(),
 });
 
@@ -42,7 +43,7 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: "invalid_body" }, { status: 400 });
   }
-  const { grade, nonResponderCount, weights } = parsed.data;
+  const { grade, nonResponderCount, optOutCount, weights } = parsed.data;
 
   const allTrips = await db.select({ id: trips.id, name: trips.name }).from(trips);
   if (allTrips.length < 4) {
@@ -55,28 +56,37 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "no_students_in_grade" }, { status: 400 });
   }
 
-  const clampedNonResponders = Math.min(nonResponderCount, gradeStudents.length);
-  const nonResponders = new Set(
-    shuffle(gradeStudents).slice(0, clampedNonResponders).map((s) => s.email),
-  );
-  const submitters = gradeStudents.filter((s) => !nonResponders.has(s.email));
+  const shuffled = shuffle(gradeStudents);
+  const clampedNonResponders = Math.min(nonResponderCount, shuffled.length);
+  const nonResponders = new Set(shuffled.slice(0, clampedNonResponders).map((s) => s.email));
+
+  const remaining = shuffled.slice(clampedNonResponders);
+  const clampedOptOuts = Math.min(optOutCount, remaining.length);
+  const optedOut = new Set(remaining.slice(0, clampedOptOuts).map((s) => s.email));
+
+  const submitters = remaining.slice(clampedOptOuts);
 
   const origin = new URL(request.url).origin;
-  const results = await Promise.all(
-    submitters.map(async (s) => {
+  const results = await Promise.all([
+    ...[...optedOut].map(async (email) => {
+      const result = await submitSimulatedRanking(origin, email, { optedOut: true });
+      return { email, ...result };
+    }),
+    ...submitters.map(async (s) => {
       const choices = weightedSampleWithoutReplacement(weightedTrips, 4).map((t) => t.id);
-      const result = await submitSimulatedRanking(origin, s.email, choices);
+      const result = await submitSimulatedRanking(origin, s.email, { optedOut: false, choices });
       return { email: s.email, ...result };
     }),
-  );
+  ]);
   const failed = results.filter((r) => !r.ok);
 
   return NextResponse.json({
     ok: true,
     grade,
-    attempted: submitters.length,
+    attempted: submitters.length + optedOut.size,
     submitted: results.length - failed.length,
     nonResponders: [...nonResponders],
+    optedOut: [...optedOut],
     failed: failed.map((f) => ({ email: f.email, status: f.status, error: f.error })),
   });
 }

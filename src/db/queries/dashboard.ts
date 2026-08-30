@@ -80,6 +80,26 @@ export async function getUnassignedNonResponders(grade: Grade) {
 }
 
 /**
+ * Explicitly opted out (submitted with optedOut: true) — distinct from a
+ * non-responder, who never submitted anything at all. Surfaced as its own
+ * flagged list on the roster overview rather than folded into
+ * non-responders: a lot of students who say they aren't going change
+ * their mind later, so the owner needs to see this group separately to
+ * know they already made an active choice, not just silence.
+ */
+export async function getOptedOut(grade: Grade) {
+  return db
+    .select({
+      name: roster.name,
+      email: roster.email,
+      notes: roster.notes,
+    })
+    .from(roster)
+    .innerJoin(submissions, eq(submissions.studentEmail, roster.email))
+    .where(and(eq(roster.grade, grade), eq(submissions.optedOut, true)));
+}
+
+/**
  * Submitted but not assigned after their wave's lottery ran — distinct from
  * non-responders (§3): these students DID participate, but all 4 choices
  * were full by their turn. Surfaced separately for the owner's attention.

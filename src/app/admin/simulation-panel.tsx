@@ -58,6 +58,7 @@ function AssignRankingsControl({ trips }: { trips: TripOption[] }) {
   const [grade, setGrade] = useState<Grade>("freshman");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [nonResponderCount, setNonResponderCount] = useState(0);
+  const [optOutCount, setOptOutCount] = useState(0);
   const evenSplit = trips.length > 0 ? Math.round(100 / trips.length) : 0;
   const [weights, setWeights] = useState<Record<string, number>>(() =>
     Object.fromEntries(trips.map((t) => [t.id, evenSplit])),
@@ -72,7 +73,7 @@ function AssignRankingsControl({ trips }: { trips: TripOption[] }) {
     const res = await fetch("/api/admin/simulate/assign-rankings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ grade, nonResponderCount, weights }),
+      body: JSON.stringify({ grade, nonResponderCount, optOutCount, weights }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -86,7 +87,7 @@ function AssignRankingsControl({ trips }: { trips: TripOption[] }) {
         ? ` ${data.failed.length} failed — check that ${grade}'s wave is currently open (use "Start wave" below first).`
         : "";
     setResult(
-      `${data.submitted}/${data.attempted} submitted, ${data.nonResponders.length} non-responders.${failedNote}`,
+      `${data.submitted}/${data.attempted} submitted, ${data.nonResponders.length} non-responders, ${data.optedOut.length} opted out.${failedNote}`,
     );
     router.refresh();
   }
@@ -123,6 +124,16 @@ function AssignRankingsControl({ trips }: { trips: TripOption[] }) {
               className="rounded border border-petal bg-white p-1"
               value={nonResponderCount}
               onChange={(e) => setNonResponderCount(Math.max(0, Number(e.target.value)))}
+            />
+          </label>
+          <label className="flex max-w-xs flex-col gap-1">
+            Opt-outs (random students who submit &quot;not going&quot;)
+            <input
+              type="number"
+              min={0}
+              className="rounded border border-petal bg-white p-1"
+              value={optOutCount}
+              onChange={(e) => setOptOutCount(Math.max(0, Number(e.target.value)))}
             />
           </label>
           <div>
