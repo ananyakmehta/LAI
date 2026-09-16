@@ -1,5 +1,4 @@
 import { readFileSync } from "node:fs";
-import { parse } from "csv-parse/sync";
 import { Command } from "commander";
 import { eq } from "drizzle-orm";
 import { db, resolveTrip, confirm, ownerIdentity } from "./lib";
@@ -14,6 +13,7 @@ import {
 import { runLotteryForWave } from "../src/lib/lottery";
 import { getTripFillStatus, moveStudentToTrip } from "../src/db/queries/moves";
 import { grantRole, revokeRole, type GrantableRole } from "../src/db/queries/access";
+import { importRosterFromCsv } from "../src/db/queries/roster";
 import type { Grade } from "../src/lib/grade";
 
 const program = new Command();
@@ -31,37 +31,13 @@ program
   .action(async (csvPath: string) => {
     const who = ownerIdentity();
     const raw = readFileSync(csvPath, "utf-8");
-    const records: { name: string; email: string; grade: string; notes?: string }[] =
-      parse(raw, { columns: true, skip_empty_lines: true, trim: true });
-
-    if (records.length === 0) {
-      console.error("No rows found in CSV.");
+    try {
+      const count = await importRosterFromCsv(raw, who);
+      console.log(`Imported/updated ${count} roster rows.`);
+    } catch (err) {
+      console.error(err instanceof Error ? err.message : String(err));
       process.exit(1);
     }
-
-    await db.transaction(async (tx) => {
-      for (const r of records) {
-        const email = r.email.toLowerCase();
-        const grade = r.grade.toLowerCase() as Grade;
-        if (!["senior", "junior", "sophomore", "freshman"].includes(grade)) {
-          throw new Error(`Invalid grade "${r.grade}" for ${email}`);
-        }
-        await tx
-          .insert(roster)
-          .values({ name: r.name, email, grade, notes: r.notes ?? "" })
-          .onConflictDoUpdate({
-            target: roster.email,
-            set: { name: r.name, grade, notes: r.notes ?? "" },
-          });
-      }
-      await tx.insert(changeLog).values({
-        who,
-        action: "import_roster",
-        toTrip: `${records.length}_rows`,
-      });
-    });
-
-    console.log(`Imported/updated ${records.length} roster rows.`);
   });
 
 program
@@ -190,6 +166,50 @@ program
     });
 
     console.log(`${trip.name} capacity set to ${n}.`);
+  });
+
+program
+  .command("set-trip-waiver <trip>")
+  .description(
+    "Configure a trip's waiver: --url (+ optional --description) to require one, or --none to clear it",
+  )
+  .option("--none", "trip requires no waiver")
+  .option("--url <url>", "external waiver URL (implies the trip requires one)")
+  .option("--description <text>", "shown next to the waiver link")
+  .action(async (tripArg: string, opts: { none?: boolean; url?: string; description?: string }) => {
+    const who = ownerIdentity();
+    const trip = await resolveTrip(tripArg);
+
+    if (opts.none && (opts.url || opts.description)) {
+      console.error("--none can't be combined with --url/--description.");
+      process.exit(1);
+    }
+    if (!opts.none && !opts.url) {
+      console.error("Pass --url <url> [--description <text>] to require a waiver, or --none to clear it.");
+      process.exit(1);
+    }
+
+    const waiverRequired = !opts.none;
+    const waiverUrl = waiverRequired ? opts.url! : null;
+    const waiverDescription = waiverRequired ? (opts.description ?? null) : null;
+
+    await db.transaction(async (tx) => {
+      await tx
+        .update(trips)
+        .set({ waiverRequired, waiverUrl, waiverDescription })
+        .where(eq(trips.id, trip.id));
+      await tx.insert(changeLog).values({
+        who,
+        action: "set_trip_waiver",
+        toTrip: waiverRequired ? `${trip.name}:${waiverUrl}` : `${trip.name}:none`,
+      });
+    });
+
+    console.log(
+      waiverRequired
+        ? `${trip.name} now requires a waiver: ${waiverUrl}`
+        : `${trip.name} no longer requires a waiver.`,
+    );
   });
 
 program

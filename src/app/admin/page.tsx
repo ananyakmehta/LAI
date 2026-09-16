@@ -12,6 +12,7 @@ import { getTripsWithCounts } from "@/db/queries/trips";
 import { getRecentChangeLog } from "@/db/queries/change-log";
 import { getAdminRolesList } from "@/db/queries/access";
 import { RosterPanel } from "./roster-panel";
+import { RosterImport } from "./roster-import";
 import { HeightMatchedRow } from "./height-matched-row";
 import { AccessManagement } from "./access-management";
 import { ViewAsControl } from "./view-as-control";
@@ -88,6 +89,13 @@ export default async function AdminPage({
             rosterOptions={rows.map((r) => ({ email: r.email, name: r.name, grade: r.grade }))}
             trips={tripOptions}
           />
+        </section>
+      )}
+
+      {can.importRosterCsv(actor) && (
+        <section>
+          <h2 className="mb-2 text-lg font-semibold text-plum">Master roster upload</h2>
+          <RosterImport />
         </section>
       )}
 
