@@ -46,7 +46,13 @@ export async function TeacherHome({ tripId }: { tripId: string | null }) {
               <tr key={r.email} className="border-b border-petal">
                 <td className="py-2 pr-4">{r.name}</td>
                 <td className="py-2 pr-4">{r.email}</td>
-                <td className="py-2 pr-4">{r.waiverUploadedAt ? "uploaded" : "not yet"}</td>
+                <td className="py-2 pr-4">
+                  {r.waiverStatus === "n/a"
+                    ? "not required"
+                    : r.waiverStatus === "done"
+                      ? "done"
+                      : "pending"}
+                </td>
               </tr>
             ))}
           </tbody>

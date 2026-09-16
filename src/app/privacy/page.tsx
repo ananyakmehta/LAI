@@ -46,9 +46,10 @@ export default function PrivacyPage() {
             the event.
           </li>
           <li>
-            <strong className="text-plum">Your waiver:</strong> if you upload
-            a signed waiver PDF, we store the file itself, tied to your email
-            address, solely to confirm it was submitted.
+            <strong className="text-plum">Your waiver:</strong> some trips
+            require a waiver hosted on that trip&rsquo;s own site (e.g. a
+            climbing gym&rsquo;s release form) — we don&rsquo;t host or store
+            the waiver itself, only a checkbox confirming you completed it.
           </li>
           <li>
             <strong className="text-plum">Your final trip assignment:</strong>{" "}
@@ -90,11 +91,10 @@ export default function PrivacyPage() {
       <section className="flex flex-col gap-2">
         <h2 className="text-lg font-semibold text-plum">Where your data lives</h2>
         <p className="text-sm text-plum/70">
-          Roster, submission, and assignment data is stored in a managed
-          database (Supabase). Uploaded waiver PDFs are stored in that same
-          provider&rsquo;s file storage. The app itself runs on Vercel. Both
-          are cloud infrastructure providers — neither has any independent
-          access to use your data for their own purposes.
+          Roster, submission, assignment, and waiver-acknowledgment data is
+          stored in a managed database (Supabase). The app itself runs on
+          Vercel. Both are cloud infrastructure providers — neither has any
+          independent access to use your data for their own purposes.
         </p>
       </section>
 

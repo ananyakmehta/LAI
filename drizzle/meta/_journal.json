@@ -15,6 +15,13 @@
       "when": 1787701427417,
       "tag": "0001_slim_wild_pack",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789599064346,
+      "tag": "0002_waiver_redesign",
+      "breakpoints": true
     }
   ]
 }

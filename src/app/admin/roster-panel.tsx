@@ -17,7 +17,7 @@ interface RosterRow {
   email: string;
   grade: string;
   submissionStatus: "none" | "opted_out" | "submitted" | "MANUAL";
-  waiverUploadedAt: Date | null;
+  waiverStatus: "n/a" | "pending" | "done";
   assignedTripId: string | null;
   assignedTripName: string | null;
 }
@@ -147,7 +147,9 @@ export function RosterPanel({
                 <td className="py-2 pr-4">{row.email}</td>
                 <td className="py-2 pr-4">{row.grade}</td>
                 <td className="py-2 pr-4">{row.submissionStatus}</td>
-                <td className="py-2 pr-4">{row.waiverUploadedAt ? "uploaded" : "—"}</td>
+                <td className="py-2 pr-4">
+                  {row.waiverStatus === "n/a" ? "—" : row.waiverStatus === "done" ? "done" : "pending"}
+                </td>
                 <td className="py-2 pr-4">{row.assignedTripName ?? "—"}</td>
                 {canMove && (
                   <td className="py-2 pr-2 text-right">

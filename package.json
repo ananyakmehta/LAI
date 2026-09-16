@@ -18,7 +18,6 @@
     "simulate:wave-cycle": "tsx scripts/simulate-wave-cycle.ts"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.112.3",
     "commander": "^15.0.0",
     "csv-parse": "^7.0.2",
     "drizzle-orm": "^0.45.2",

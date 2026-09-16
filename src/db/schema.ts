@@ -60,6 +60,14 @@ export const trips = pgTable("trips", {
   // are always computed by counting `assignments` rows, so they can never
   // drift out of sync with reality (§4).
   chaperoneTeacherEmail: text("chaperone_teacher_email"),
+  // Waivers are per-trip, not universal — some trips (rock climbing, etc.)
+  // have their own release form hosted by the vendor, most don't need one
+  // at all. waiverUrl/waiverDescription are only meaningful when
+  // waiverRequired is true; see the waivers table below for how a
+  // student's completion gets recorded.
+  waiverRequired: boolean("waiver_required").notNull().default(false),
+  waiverUrl: text("waiver_url"),
+  waiverDescription: text("waiver_description"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -177,19 +185,33 @@ export const eventConfig = pgTable("event_config", {
 });
 
 // §3 requires two independently-tracked completion flags per student —
-// ranked their trips, and uploaded a waiver. Ranking status is derivable
+// ranked their trips, and completed a waiver. Ranking status is derivable
 // from `submissions`; this table is where waiver status lives.
-export const waivers = pgTable("waivers", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  studentEmail: text("student_email")
-    .notNull()
-    .unique()
-    .references(() => roster.email, { onDelete: "cascade" }),
-  storagePath: text("storage_path").notNull(),
-  uploadedAt: timestamp("uploaded_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+//
+// Waivers aren't files we host — some trips have their own external
+// release form (a vendor's own site), so a row here just means "this
+// student says they've completed their assigned trip's waiver," not that
+// we hold a copy of it. Keyed by (student, trip) rather than student alone
+// so that moving a student to a different trip doesn't carry over an
+// acknowledgment that was for a different trip's requirement — the old
+// row simply becomes irrelevant, and the new trip has none until they
+// check the box again.
+export const waivers = pgTable(
+  "waivers",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    studentEmail: text("student_email")
+      .notNull()
+      .references(() => roster.email, { onDelete: "cascade" }),
+    tripId: uuid("trip_id")
+      .notNull()
+      .references(() => trips.id, { onDelete: "cascade" }),
+    acknowledgedAt: timestamp("acknowledged_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [unique().on(table.studentEmail, table.tripId)],
+);
 
 // §10 requires `run-sort` re-runs to be "recoverable in spirit" — snapshot
 // the prior assignments for a wave before overwriting them.

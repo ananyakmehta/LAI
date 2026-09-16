@@ -60,7 +60,9 @@ export default async function TripRosterPage({
               <td className="py-2 pr-4">{row.name}</td>
               <td className="py-2 pr-4">{row.email}</td>
               <td className="py-2 pr-4">{row.grade}</td>
-              <td className="py-2 pr-4">{row.waiverUploadedAt ? "uploaded" : "—"}</td>
+              <td className="py-2 pr-4">
+                {row.waiverStatus === "n/a" ? "not required" : row.waiverStatus === "done" ? "done" : "pending"}
+              </td>
             </tr>
           ))}
         </tbody>

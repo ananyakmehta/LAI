@@ -14,7 +14,7 @@ export default async function HomePage() {
         <h1 className="text-2xl font-semibold text-plum">Learning in Action Day</h1>
         <p className="text-sm text-plum/70">
           Sign in with your @presentationhs.org Google account to browse
-          trips, submit your ranked choices, or upload your waiver.
+          trips, submit your ranked choices, or confirm a trip waiver.
         </p>
         <form
           action={async () => {

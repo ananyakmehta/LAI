@@ -28,7 +28,13 @@ interface SubmissionStatus {
 }
 
 interface WaiverStatus {
-  waiver: { uploadedAt: string } | null;
+  assignment: {
+    tripName: string;
+    waiverRequired: boolean;
+    waiverUrl: string | null;
+    waiverDescription: string | null;
+    acknowledged: boolean;
+  } | null;
 }
 
 type StudentState = "A" | "B" | "C" | "D" | "UNPLACED";
@@ -83,13 +89,11 @@ export function StudentHome({
       {state === "D" && (
         <StateD
           assignment={status.assignment!}
+          waiver={waiver.assignment}
+          onWaiverChange={reload}
           changeRequestVisible={changeRequestVisible}
           changeRequestWindowEndsAt={changeRequestWindowEndsAt}
         />
-      )}
-
-      {(state === "A" || state === "B" || state === "D") && (
-        <WaiverUpload waiver={waiver.waiver} onUploaded={reload} />
       )}
     </div>
   );
@@ -278,10 +282,14 @@ function StateUnplaced() {
 
 function StateD({
   assignment,
+  waiver,
+  onWaiverChange,
   changeRequestVisible,
   changeRequestWindowEndsAt,
 }: {
   assignment: { tripName: string };
+  waiver: WaiverStatus["assignment"];
+  onWaiverChange: () => void;
   changeRequestVisible: boolean;
   changeRequestWindowEndsAt: string | null;
 }) {
@@ -294,44 +302,70 @@ function StateD({
           Need a change{changeRequestWindowEndsAt ? ` before ${new Date(changeRequestWindowEndsAt).toLocaleDateString()}` : ""}? Email the event organizer.
         </p>
       )}
+      {waiver && <TripWaiver waiver={waiver} onChange={onWaiverChange} />}
     </section>
   );
 }
 
-function WaiverUpload({
+/**
+ * Waivers are trip-specific and external — some trips (rock climbing, etc.)
+ * have their own release form on the vendor's own site, so this is a link +
+ * description + self-report checkbox, never a file upload. Trips that don't
+ * need one just say so.
+ */
+function TripWaiver({
   waiver,
-  onUploaded,
+  onChange,
 }: {
-  waiver: { uploadedAt: string } | null;
-  onUploaded: () => void;
+  waiver: NonNullable<WaiverStatus["assignment"]>;
+  onChange: () => void;
 }) {
-  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState(false);
 
-  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
+  async function toggle(acknowledged: boolean) {
+    setSaving(true);
     setError(false);
-    const formData = new FormData();
-    formData.append("file", file);
-    const res = await fetch("/api/waivers", { method: "POST", body: formData });
-    setUploading(false);
-    if (res.ok) onUploaded();
+    const res = await fetch("/api/waivers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ acknowledged }),
+    });
+    setSaving(false);
+    if (res.ok) onChange();
     else setError(true);
   }
 
   return (
-    <section className="flex flex-col gap-2 border-t border-petal pt-4">
-      <h2 className="text-sm font-semibold text-plum">Waiver</h2>
-      <a href="/waiver-template.pdf" className="w-fit text-sm text-plum underline">
-        Download the waiver form
-      </a>
-      <input type="file" accept="application/pdf" onChange={handleUpload} className="text-sm" />
-      {uploading && <p className="text-sm text-plum/70">Uploading…</p>}
-      {error && <p className="text-sm text-red-600">Upload failed — make sure it&apos;s a PDF under 10MB.</p>}
-      {waiver && <p className="text-sm text-green-700">Uploaded {new Date(waiver.uploadedAt).toLocaleString()}.</p>}
-      {!waiver && !uploading && <p className="text-sm text-plum/70">No waiver uploaded yet.</p>}
-    </section>
+    <div className="flex flex-col gap-2 border-t border-petal pt-4">
+      <h3 className="text-sm font-semibold text-plum">Waiver</h3>
+      {!waiver.waiverRequired ? (
+        <p className="text-sm text-plum/70">No waiver required for this trip.</p>
+      ) : (
+        <div className="flex flex-col gap-2 text-sm">
+          {waiver.waiverDescription && <p className="text-plum/70">{waiver.waiverDescription}</p>}
+          {waiver.waiverUrl && (
+            <a
+              href={waiver.waiverUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="w-fit text-plum underline"
+            >
+              Open the waiver form
+            </a>
+          )}
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={waiver.acknowledged}
+              disabled={saving}
+              onChange={(e) => toggle(e.target.checked)}
+            />
+            I&apos;ve completed this waiver
+          </label>
+          {error && <p className="text-sm text-red-600">Something went wrong — try again.</p>}
+        </div>
+      )}
+    </div>
   );
 }

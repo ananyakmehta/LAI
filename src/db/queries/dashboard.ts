@@ -24,16 +24,28 @@ export async function getMasterOverview(tripId?: string) {
           else 'none'
         end
       `,
-      waiverUploadedAt: waivers.uploadedAt,
+      // Waivers are per-(student, trip) now, not per-student — a student
+      // with no assignment yet, or assigned to a trip that doesn't need
+      // one, reads as 'n/a' rather than a false "not done" flag.
+      waiverStatus: sql<"n/a" | "pending" | "done">`
+        case
+          when ${trips.waiverRequired} is not true then 'n/a'
+          when ${waivers.studentEmail} is not null then 'done'
+          else 'pending'
+        end
+      `,
       assignedTripId: assignments.tripId,
       assignedTripName: trips.name,
       assignmentMethod: assignments.assignmentMethod,
     })
     .from(roster)
     .leftJoin(submissions, eq(submissions.studentEmail, roster.email))
-    .leftJoin(waivers, eq(waivers.studentEmail, roster.email))
     .leftJoin(assignments, eq(assignments.studentEmail, roster.email))
-    .leftJoin(trips, eq(trips.id, assignments.tripId));
+    .leftJoin(trips, eq(trips.id, assignments.tripId))
+    .leftJoin(
+      waivers,
+      and(eq(waivers.studentEmail, roster.email), eq(waivers.tripId, assignments.tripId)),
+    );
 
   return tripId ? rows.filter((r) => r.assignedTripId === tripId) : rows;
 }
@@ -88,11 +100,12 @@ export async function getOptedOut(grade: Grade) {
 }
 
 /**
- * Roster MINUS waivers, restricted to one grade — waiver upload is
- * tracked independently of ranking submission (§3), so this can include
- * students who already submitted or were manually placed. Rendered as its
- * own scrollable block on the roster overview rather than an unbounded
- * list, since early in the process this can be most of the roster.
+ * Students assigned to a trip that requires a waiver, who haven't
+ * acknowledged it yet — restricted to one grade. Unassigned students
+ * aren't flagged here: there's no trip-specific waiver to point at until
+ * they have one, so this only ever grows once sorting places someone,
+ * unlike the old "roster minus waivers" definition which flagged everyone
+ * up front.
  */
 export async function getMissingWaivers(grade: Grade) {
   return db
@@ -102,7 +115,12 @@ export async function getMissingWaivers(grade: Grade) {
       notes: roster.notes,
     })
     .from(roster)
-    .leftJoin(waivers, eq(waivers.studentEmail, roster.email))
+    .innerJoin(assignments, eq(assignments.studentEmail, roster.email))
+    .innerJoin(trips, and(eq(trips.id, assignments.tripId), eq(trips.waiverRequired, true)))
+    .leftJoin(
+      waivers,
+      and(eq(waivers.studentEmail, roster.email), eq(waivers.tripId, assignments.tripId)),
+    )
     .where(and(eq(roster.grade, grade), isNull(waivers.studentEmail)));
 }
 

@@ -1,59 +1,64 @@
 import { NextResponse } from "next/server";
-import { getRosterByEmail } from "@/db/queries/roster";
-import { getWaiverForStudent, upsertWaiver } from "@/db/queries/waivers";
+import { z } from "zod";
+import { getOwnAssignment } from "@/db/queries/assignments";
+import { getTripById } from "@/db/queries/trips";
+import { getWaiverAcknowledgment, setWaiverAcknowledgment } from "@/db/queries/waivers";
 import { resolveStudentIdentity } from "@/lib/student-identity";
-import {
-  supabaseStorage,
-  WAIVER_BUCKET,
-  waiverStoragePath,
-} from "@/lib/supabase-storage";
-
-const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
 
 export async function GET(request: Request) {
   const identity = await resolveStudentIdentity(request);
   if (!identity) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  const waiver = await getWaiverForStudent(identity.email);
-  return NextResponse.json({ waiver });
+
+  const assignment = await getOwnAssignment(identity.email);
+  if (!assignment) {
+    return NextResponse.json({ assignment: null });
+  }
+
+  const trip = await getTripById(assignment.tripId);
+  if (!trip) {
+    return NextResponse.json({ assignment: null });
+  }
+
+  const acknowledgment = trip.waiverRequired
+    ? await getWaiverAcknowledgment(identity.email, trip.id)
+    : null;
+
+  return NextResponse.json({
+    assignment: {
+      tripName: trip.name,
+      waiverRequired: trip.waiverRequired,
+      waiverUrl: trip.waiverUrl,
+      waiverDescription: trip.waiverDescription,
+      acknowledged: acknowledgment !== null,
+    },
+  });
 }
+
+const postSchema = z.object({ acknowledged: z.boolean() });
 
 export async function POST(request: Request) {
   const identity = await resolveStudentIdentity(request);
   if (!identity) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  const { email } = identity;
 
-  // Waiver upload isn't wave-gated — students may need to upload it any
-  // time (§3 tracks it independently of ranking status).
-  const rosterRow = await getRosterByEmail(email);
-  if (!rosterRow) {
-    return NextResponse.json({ error: "not_a_student" }, { status: 403 });
+  const parsed = postSchema.safeParse(await request.json());
+  if (!parsed.success) {
+    return NextResponse.json({ error: "invalid_body" }, { status: 400 });
   }
 
-  const formData = await request.formData();
-  const file = formData.get("file");
-  if (!(file instanceof File)) {
-    return NextResponse.json({ error: "no_file" }, { status: 400 });
-  }
-  if (file.type !== "application/pdf") {
-    return NextResponse.json({ error: "must_be_pdf" }, { status: 400 });
-  }
-  if (file.size > MAX_BYTES) {
-    return NextResponse.json({ error: "file_too_large" }, { status: 400 });
+  const assignment = await getOwnAssignment(identity.email);
+  if (!assignment) {
+    return NextResponse.json({ error: "not_assigned" }, { status: 403 });
   }
 
-  const path = waiverStoragePath(email);
-  const { error } = await supabaseStorage.storage
-    .from(WAIVER_BUCKET)
-    .upload(path, file, { contentType: "application/pdf", upsert: true });
-
-  if (error) {
-    return NextResponse.json({ error: "upload_failed" }, { status: 500 });
+  const trip = await getTripById(assignment.tripId);
+  if (!trip?.waiverRequired) {
+    return NextResponse.json({ error: "no_waiver_required" }, { status: 400 });
   }
 
-  await upsertWaiver(email, path);
+  await setWaiverAcknowledgment(identity.email, trip.id, parsed.data.acknowledged);
   return NextResponse.json({ ok: true });
 }
