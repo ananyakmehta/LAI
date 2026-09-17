@@ -15,12 +15,9 @@ export default function PrivacyPage() {
       </div>
 
       <p className="text-sm text-plum/70">
-        Learning In Action is a tool built to run Presentation High School&rsquo;s
-        Learning in Action Day trip sign-up and assignment process. It isn&rsquo;t
-        an official school system — it&rsquo;s built and run by Ananya Mehta, a
-        student at the school, using roster data the school provided for this
-        one event. This page explains what it collects, why, and who can see
-        it.
+        Learning In Action is a tool built to run Presentation High
+        School&rsquo;s Learning in Action Day trip sign-up and assignment
+        process.
       </p>
 
       <section className="flex flex-col gap-2">
@@ -29,16 +26,13 @@ export default function PrivacyPage() {
           <li>
             <strong className="text-plum">From Google Sign-In:</strong> your
             name, email address, and profile photo, provided by Google when
-            you sign in. We never see your Google password, and signing in
-            doesn&rsquo;t give this app access to your Gmail, Drive, Calendar,
-            or anything else in your Google account — only that basic profile
-            information.
+            you sign in. Signing in does not give this app access to your
+            Google password, Gmail, Drive, Calendar, or anything else in your
+            Google account.
           </li>
           <li>
             <strong className="text-plum">From the school roster:</strong>{" "}
-            your name, email, and grade level, imported once from school
-            records so the sign-in page can confirm you&rsquo;re a student
-            here.
+            your name, email, and grade level.
           </li>
           <li>
             <strong className="text-plum">Your trip choices:</strong> the
@@ -53,15 +47,10 @@ export default function PrivacyPage() {
           </li>
           <li>
             <strong className="text-plum">Your final trip assignment:</strong>{" "}
-            which trip you were placed on, and whether that was decided by the
-            lottery or by a manual override.
+            which trip you were placed in, and whether it was decided by
+            lottery or by manual override.
           </li>
         </ul>
-        <p className="text-sm text-plum/70">
-          We don&rsquo;t collect anything beyond this — no location tracking,
-          no analytics or advertising trackers, and nothing is sold or shared
-          outside this system.
-        </p>
       </section>
 
       <section className="flex flex-col gap-2">
@@ -70,20 +59,17 @@ export default function PrivacyPage() {
           <li>
             <strong className="text-plum">Students</strong> can see their own
             information and, once assignments are made, the name of their own
-            trip — never the names of other students, on any trip, at any
-            point. That&rsquo;s a deliberate design choice, not an oversight.
+            trip.
           </li>
           <li>
             <strong className="text-plum">Teachers</strong> can see the
-            roster — names, emails, waiver status — only for the trip
-            they&rsquo;re chaperoning.
+            roster only for the trip they&rsquo;re chaperoning: names, emails,
+            waiver status.
           </li>
           <li>
             <strong className="text-plum">Event organizers</strong> (the
             owner and anyone specifically granted admin access) can see the
-            full roster, all submissions, and the audit log of changes, since
-            running the event and manually placing students who need it
-            requires that.
+            full roster, all submissions, and the audit log of changes.
           </li>
         </ul>
       </section>
@@ -91,29 +77,27 @@ export default function PrivacyPage() {
       <section className="flex flex-col gap-2">
         <h2 className="text-lg font-semibold text-plum">Where your data lives</h2>
         <p className="text-sm text-plum/70">
-          Roster, submission, assignment, and waiver-acknowledgment data is
-          stored in a managed database (Supabase). The app itself runs on
-          Vercel. Both are cloud infrastructure providers — neither has any
-          independent access to use your data for their own purposes.
+          Roster, submission, and assignment data is stored in a managed
+          database. The app itself runs on Vercel. Both are cloud
+          infrastructure providers, neither has any independent access to use
+          your data.
         </p>
       </section>
 
       <section className="flex flex-col gap-2">
         <h2 className="text-lg font-semibold text-plum">How long we keep it</h2>
         <p className="text-sm text-plum/70">
-          Data is kept for as long as needed to run this year&rsquo;s event
-          and for the school&rsquo;s own recordkeeping. If you&rsquo;d like
-          your information removed sooner, email us and we&rsquo;ll take care
-          of it.
+          Data is kept for as long as needed to run this year&rsquo;s
+          event/recordkeeping. If you&rsquo;d like your information removed
+          sooner, please email us.
         </p>
       </section>
 
       <section className="flex flex-col gap-2 border-t border-petal pt-6">
         <h2 className="text-lg font-semibold text-plum">Questions</h2>
         <p className="text-sm text-plum/70">
-          This is a small, single-purpose tool, not a company. If anything
-          here is unclear, or you&rsquo;d like your data changed or removed,
-          email{" "}
+          If anything here is unclear, or you&rsquo;d like your data changed
+          or removed, email{" "}
           <a href="mailto:ananya.k.mehta@gmail.com" className="text-plum underline">
             ananya.k.mehta@gmail.com
           </a>
