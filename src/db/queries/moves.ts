@@ -120,6 +120,16 @@ export async function assignNonRespondersToTrip(
  * blunt reset scripts/simulate-wave-cycle.ts does at the start of a run,
  * just exposed as a one-click control instead of a full script re-run.
  */
+// How far out "Reset" pushes every wave's open/close window — long enough
+// that no student reads a wave as open (or as closed-and-sorted) until the
+// owner deliberately (re)configures real dates via set-event-dates/
+// set-wave. Clearing sortedAt alone isn't enough: a prior startWaveNow/
+// endWaveNow test run leaves opensAt/closesAt in the past, which once
+// reset also nulls sortedAt, still reads as "wave hasn't opened, but
+// opensAt is also in the past" — actually worse, it falls through to
+// State C ("results posting soon") for a wave nobody ever really ran.
+const RESET_WAVE_OFFSET_MS = 365 * 24 * 60 * 60 * 1000;
+
 export async function resetAllSubmissionsAndAssignments(
   who: string,
 ): Promise<{ clearedAssignments: number; clearedSubmissions: number }> {
@@ -136,7 +146,10 @@ export async function resetAllSubmissionsAndAssignments(
       await tx.delete(submissions);
     }
 
-    await tx.update(waveSchedule).set({ sortedAt: null });
+    const opensAt = new Date(Date.now() + RESET_WAVE_OFFSET_MS);
+    const closesAt = new Date(opensAt.getTime() + 60 * 60 * 1000);
+    await tx.update(waveSchedule).set({ opensAt, closesAt, sortedAt: null });
+
     await tx.insert(changeLog).values({
       who,
       action: "reset_submissions_and_assignments",

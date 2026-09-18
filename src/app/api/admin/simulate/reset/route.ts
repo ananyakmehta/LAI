@@ -6,8 +6,10 @@ import { resetAllSubmissionsAndAssignments } from "@/db/queries/moves";
 
 /**
  * Owner-only simulation control — clears every assignment AND every
- * submission across the whole roster (all grades). Gated the same way as
- * /api/admin/view-as.
+ * submission across the whole roster (all grades), and pushes every wave's
+ * schedule back to "not yet started" so no student is left reading a
+ * stale wave-closed/sorted state from a prior test run. Gated the same way
+ * as /api/admin/view-as.
  */
 export async function POST() {
   const session = await auth();
