@@ -5,11 +5,11 @@ import { roleSimulationEnabled } from "@/lib/view-context";
 import { resetAllSubmissionsAndAssignments } from "@/db/queries/moves";
 
 /**
- * Owner-only simulation control — clears every assignment AND every
- * submission across the whole roster (all grades), and pushes every wave's
- * schedule back to "not yet started" so no student is left reading a
- * stale wave-closed/sorted state from a prior test run. Gated the same way
- * as /api/admin/view-as.
+ * Owner-only simulation control — clears every assignment, submission, AND
+ * waiver acknowledgment across the whole roster (all grades), un-releases
+ * assignments, and pushes every wave's schedule back to "not yet started"
+ * so no student is left reading stale state from a prior test run. Gated
+ * the same way as /api/admin/view-as.
  */
 export async function POST() {
   const session = await auth();

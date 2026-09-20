@@ -1,6 +1,6 @@
 import { eq, inArray } from "drizzle-orm";
 import { db } from "@/db/client";
-import { assignments, changeLog, submissions, trips, waveSchedule } from "@/db/schema";
+import { assignments, changeLog, eventConfig, submissions, trips, waivers, waveSchedule } from "@/db/schema";
 
 export async function getTripFillStatus(tripId: string) {
   const [trip] = await db.select().from(trips).where(eq(trips.id, tripId)).limit(1);
@@ -132,7 +132,7 @@ const RESET_WAVE_OFFSET_MS = 365 * 24 * 60 * 60 * 1000;
 
 export async function resetAllSubmissionsAndAssignments(
   who: string,
-): Promise<{ clearedAssignments: number; clearedSubmissions: number }> {
+): Promise<{ clearedAssignments: number; clearedSubmissions: number; clearedWaivers: number }> {
   return db.transaction(async (tx) => {
     const existingAssignments = await tx.select({ id: assignments.id }).from(assignments);
     const clearedAssignments = existingAssignments.length;
@@ -146,15 +146,29 @@ export async function resetAllSubmissionsAndAssignments(
       await tx.delete(submissions);
     }
 
+    // Waiver acknowledgments are keyed to a (student, trip) assignment that
+    // no longer exists once assignments are cleared — stale residue from
+    // the test cycle being reset, not data worth keeping around.
+    const existingWaivers = await tx.select({ id: waivers.id }).from(waivers);
+    const clearedWaivers = existingWaivers.length;
+    if (clearedWaivers > 0) {
+      await tx.delete(waivers);
+    }
+
     const opensAt = new Date(Date.now() + RESET_WAVE_OFFSET_MS);
     const closesAt = new Date(opensAt.getTime() + 60 * 60 * 1000);
     await tx.update(waveSchedule).set({ opensAt, closesAt, sortedAt: null });
 
+    // The release step is itself simulation-cycle state — a reset that left
+    // it set would show every student's (now-deleted) old assignment as
+    // "released" again the instant sorting re-runs.
+    await tx.update(eventConfig).set({ assignmentsReleasedAt: null }).where(eq(eventConfig.id, 1));
+
     await tx.insert(changeLog).values({
       who,
       action: "reset_submissions_and_assignments",
-      toTrip: `cleared_${clearedAssignments}_assignments_${clearedSubmissions}_submissions`,
+      toTrip: `cleared_${clearedAssignments}_assignments_${clearedSubmissions}_submissions_${clearedWaivers}_waivers`,
     });
-    return { clearedAssignments, clearedSubmissions };
+    return { clearedAssignments, clearedSubmissions, clearedWaivers };
   });
 }

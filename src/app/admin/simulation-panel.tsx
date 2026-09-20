@@ -297,7 +297,7 @@ function ResetControl() {
     }
     setStatus("idle");
     setResult(
-      `Cleared ${data.clearedAssignments} assignment(s) and ${data.clearedSubmissions} submission(s) across all grades.`,
+      `Cleared ${data.clearedAssignments} assignment(s), ${data.clearedSubmissions} submission(s), and ${data.clearedWaivers} waiver acknowledgment(s) — and un-released assignments — across all grades.`,
     );
     router.refresh();
   }
@@ -312,7 +312,7 @@ function ResetControl() {
           disabled={status === "running"}
           className="rounded bg-magenta px-3 py-1 text-white hover:bg-rose disabled:opacity-40"
         >
-          Unassign + clear submissions (every grade)
+          Clear everything (every grade)
         </button>
       </div>
       {result && (
