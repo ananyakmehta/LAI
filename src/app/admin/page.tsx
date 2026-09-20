@@ -11,12 +11,14 @@ import {
 import { getTripsWithCounts } from "@/db/queries/trips";
 import { getRecentChangeLog } from "@/db/queries/change-log";
 import { getAdminRolesList } from "@/db/queries/access";
+import { getEventConfig } from "@/db/queries/event-config";
 import { RosterPanel } from "./roster-panel";
 import { RosterImport } from "./roster-import";
 import { HeightMatchedRow } from "./height-matched-row";
 import { AccessManagement } from "./access-management";
 import { ViewAsControl } from "./view-as-control";
 import { SimulationPanel } from "./simulation-panel";
+import { ReleaseAssignmentsControl } from "./release-assignments-control";
 import type { Grade } from "@/lib/grade";
 import Link from "next/link";
 
@@ -66,6 +68,7 @@ export default async function AdminPage({
   const isOwnerView = actor.role === "owner";
   const changeLog = isOwnerView ? await getRecentChangeLog(50) : [];
   const adminRoles = isOwnerView ? await getAdminRolesList() : [];
+  const eventConfig = isOwnerView ? await getEventConfig() : null;
 
   const showViewAsControl = ctx.realActor.role === "owner" && !ctx.simulated && roleSimulationEnabled();
   const showSimulationPanel = ctx.realActor.role === "owner" && !ctx.simulated && roleSimulationEnabled();
@@ -168,6 +171,15 @@ export default async function AdminPage({
           </tbody>
         </table>
       </section>
+
+      {isOwnerView && eventConfig && (
+        <section>
+          <h2 className="mb-2 text-lg font-semibold text-plum">Trip assignments</h2>
+          <ReleaseAssignmentsControl
+            releasedAt={eventConfig.assignmentsReleasedAt?.toISOString() ?? null}
+          />
+        </section>
+      )}
 
       {isOwnerView && (
         <section>

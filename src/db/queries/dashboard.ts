@@ -37,6 +37,8 @@ export async function getMasterOverview(tripId?: string) {
       assignedTripId: assignments.tripId,
       assignedTripName: trips.name,
       assignmentMethod: assignments.assignmentMethod,
+      parentEmail: submissions.parentEmail,
+      parentPhone: submissions.parentPhone,
     })
     .from(roster)
     .leftJoin(submissions, eq(submissions.studentEmail, roster.email))

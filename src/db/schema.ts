@@ -96,6 +96,11 @@ export const submissions = pgTable("submissions", {
     onDelete: "restrict",
   }),
   optedOut: boolean("opted_out").notNull().default(false),
+  // Collected alongside the ranking, regardless of opt-out status — a
+  // contact for the trip day itself, not identity/login (that's the
+  // student's own roster email).
+  parentEmail: text("parent_email"),
+  parentPhone: text("parent_phone"),
   submittedAt: timestamp("submitted_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -182,6 +187,13 @@ export const eventConfig = pgTable("event_config", {
     withTimezone: true,
   }),
   finalLockAt: timestamp("final_lock_at", { withTimezone: true }),
+  // Sorting itself runs automatically per-wave (cron or manual "Sort"), but
+  // students never see an assignment until the owner deliberately flips
+  // this — a separate reveal step from computing the result. Null means
+  // "not released yet"; set once, globally, for every grade at once.
+  assignmentsReleasedAt: timestamp("assignments_released_at", {
+    withTimezone: true,
+  }),
 });
 
 // §3 requires two independently-tracked completion flags per student —

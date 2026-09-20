@@ -20,6 +20,8 @@ interface RosterRow {
   waiverStatus: "n/a" | "pending" | "done";
   assignedTripId: string | null;
   assignedTripName: string | null;
+  parentEmail: string | null;
+  parentPhone: string | null;
 }
 
 interface FlaggedRow {
@@ -131,6 +133,7 @@ export function RosterPanel({
               <th className="py-2 pr-4">Submission</th>
               <th className="py-2 pr-4">Waiver</th>
               <th className="py-2 pr-4">Assigned trip</th>
+              <th className="py-2 pr-4">Parent contact</th>
               {canMove && <th className="py-2 pr-4"></th>}
             </tr>
           </thead>
@@ -151,6 +154,9 @@ export function RosterPanel({
                   {row.waiverStatus === "n/a" ? "—" : row.waiverStatus === "done" ? "done" : "pending"}
                 </td>
                 <td className="py-2 pr-4">{row.assignedTripName ?? "—"}</td>
+                <td className="py-2 pr-4">
+                  {[row.parentEmail, row.parentPhone].filter(Boolean).join(" / ") || "—"}
+                </td>
                 {canMove && (
                   <td className="py-2 pr-2 text-right">
                     <RosterRowActions

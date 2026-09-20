@@ -12,6 +12,7 @@ import {
 } from "@/db/queries/waves";
 import { getSubmissionForStudent, upsertSubmission } from "@/db/queries/submissions";
 import { getOwnAssignment } from "@/db/queries/assignments";
+import { getEventConfig } from "@/db/queries/event-config";
 import { resolveStudentIdentity } from "@/lib/student-identity";
 
 export async function GET(request: Request) {
@@ -21,14 +22,23 @@ export async function GET(request: Request) {
   }
   const { email, timePhase } = identity;
 
-  const [submission, rosterRow, assignment] = await Promise.all([
+  const [submission, rosterRow, assignment, eventConfig] = await Promise.all([
     getSubmissionForStudent(email),
     getRosterByEmail(email),
     getOwnAssignment(email),
+    getEventConfig(),
   ]);
+  const released = eventConfig.assignmentsReleasedAt !== null;
 
   if (!rosterRow) {
-    return NextResponse.json({ submission, waveOpen: false, grade: null, assignment: null, sortedAt: null });
+    return NextResponse.json({
+      submission,
+      waveOpen: false,
+      grade: null,
+      assignment: null,
+      sortedAt: null,
+      released,
+    });
   }
 
   const wave = await getWaveScheduleForGrade(rosterRow.grade);
@@ -40,15 +50,25 @@ export async function GET(request: Request) {
     closesAt: wave?.closesAt ?? null,
     opensAt: wave?.opensAt ?? null,
     sortedAt: wave?.sortedAt ?? null,
-    assignment: assignment ? { tripName: assignment.tripName } : null,
+    released,
+    // Withheld entirely (not just hidden client-side) until the owner
+    // deliberately releases — a curious student reading the network tab
+    // shouldn't see their assignment early just because sorting already ran.
+    assignment: released && assignment ? { tripName: assignment.tripName } : null,
   });
 }
 
+const parentContactFields = {
+  parentEmail: z.string().trim().max(320).optional(),
+  parentPhone: z.string().trim().max(40).optional(),
+};
+
 const bodySchema = z.discriminatedUnion("optedOut", [
-  z.object({ optedOut: z.literal(true) }),
+  z.object({ optedOut: z.literal(true), ...parentContactFields }),
   z.object({
     optedOut: z.literal(false),
     choices: z.array(z.string().uuid()).length(4),
+    ...parentContactFields,
   }),
 ]);
 
@@ -91,6 +111,9 @@ export async function POST(request: Request) {
     );
   }
 
+  const parentEmail = parsed.data.parentEmail?.trim() || null;
+  const parentPhone = parsed.data.parentPhone?.trim() || null;
+
   if (parsed.data.optedOut) {
     await upsertSubmission(email, {
       optedOut: true,
@@ -98,6 +121,8 @@ export async function POST(request: Request) {
       tripChoice2: null,
       tripChoice3: null,
       tripChoice4: null,
+      parentEmail,
+      parentPhone,
     });
     return NextResponse.json({ ok: true });
   }
@@ -124,6 +149,8 @@ export async function POST(request: Request) {
     tripChoice2: choices[1],
     tripChoice3: choices[2],
     tripChoice4: choices[3],
+    parentEmail,
+    parentPhone,
   });
   return NextResponse.json({ ok: true });
 }

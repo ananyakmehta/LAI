@@ -75,6 +75,10 @@ export const can = {
     return actor.role === "owner";
   },
 
+  releaseAssignments(actor: Actor): boolean {
+    return actor.role === "owner";
+  },
+
   importRosterCsv(actor: Actor): boolean {
     return actor.role === "owner";
   },
