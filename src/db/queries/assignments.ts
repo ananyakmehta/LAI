@@ -13,6 +13,11 @@ export async function getOwnAssignment(email: string) {
     .select({
       tripId: assignments.tripId,
       tripName: trips.name,
+      tripDescription: trips.description,
+      facultyLead: trips.facultyLead,
+      startTime: trips.startTime,
+      endTime: trips.endTime,
+      travelMethod: trips.travelMethod,
       assignmentMethod: assignments.assignmentMethod,
     })
     .from(assignments)

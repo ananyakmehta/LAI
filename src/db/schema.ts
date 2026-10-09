@@ -60,6 +60,15 @@ export const trips = pgTable("trips", {
   // are always computed by counting `assignments` rows, so they can never
   // drift out of sync with reality (§4).
   chaperoneTeacherEmail: text("chaperone_teacher_email"),
+  // Display-only trip-day logistics, shown to students on the picker and
+  // again (with the rest of the trip card) once assignments are released —
+  // separate from chaperoneTeacherEmail, which is the admin-login identity
+  // for the teacher tier, not necessarily the same as the catalog's named
+  // faculty lead(s).
+  facultyLead: text("faculty_lead"),
+  startTime: text("start_time"),
+  endTime: text("end_time"),
+  travelMethod: text("travel_method"),
   // Waivers are per-trip, not universal — some trips (rock climbing, etc.)
   // have their own release form hosted by the vendor, most don't need one
   // at all. waiverUrl/waiverDescription are only meaningful when
@@ -158,8 +167,19 @@ export const adminRoles = pgTable("admin_roles", {
 // ---------------------------------------------------------------------------
 
 // Configurable wave dates/times (owner asked for this explicitly — not
-// hardcoded Mon/Tue/Wed/Thu per §5's table). The cron job reads this to know
-// which wave just closed and hasn't been sorted yet.
+// hardcoded Mon/Tue/Wed/Thu per §5's table).
+//
+// closesAt is that GRADE'S OWN priority deadline, not a hard submission
+// cutoff — per the real 2026 event rules, seniors/juniors can still submit
+// after their own closesAt, right up to the shared eventConfig.
+// finalSubmissionDeadline below, they just lose grade-level priority and
+// fall into the second (merged) sort pass instead of the first. Only
+// sophomores/freshmen have closesAt == the final deadline, since they were
+// never given an earlier priority window to miss.
+//
+// sortedAt marks "has this grade's priority cohort been placed yet" — set
+// by whichever sort pass processes that grade (see src/lib/lottery.ts's
+// runLotteryPass1/runLotteryPass2), not by a per-grade independent sort.
 export const waveSchedule = pgTable(
   "wave_schedule",
   {
@@ -187,6 +207,14 @@ export const eventConfig = pgTable("event_config", {
     withTimezone: true,
   }),
   finalLockAt: timestamp("final_lock_at", { withTimezone: true }),
+  // The one real hard stop on submissions, shared by every grade — a
+  // senior/junior submitting after their own wave_schedule.closesAt (their
+  // priority deadline) is still accepted up until this timestamp, just
+  // without priority. Sophomores/freshmen never have an earlier deadline
+  // to lose, so this IS effectively their wave's closesAt too.
+  finalSubmissionDeadline: timestamp("final_submission_deadline", {
+    withTimezone: true,
+  }),
   // Sorting itself runs automatically per-wave (cron or manual "Sort"), but
   // students never see an assignment until the owner deliberately flips
   // this — a separate reveal step from computing the result. Null means

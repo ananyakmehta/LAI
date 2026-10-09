@@ -19,8 +19,12 @@ export async function getAllWaveSchedule() {
 
 /**
  * Wave-gating enforced by the system itself (§5) — not by controlling who
- * has the link. A student may submit/edit only while now is within their
- * own grade's [opensAt, closesAt) window.
+ * has the link. A student may submit/edit while now is within
+ * [opensAt, finalDeadline) — NOT [opensAt, closesAt). closesAt is that
+ * grade's own PRIORITY deadline (see schema.ts's wave_schedule comment):
+ * a senior/junior submitting after it is still accepted right up to the
+ * shared finalDeadline, just without priority — only sophomores/freshmen
+ * ever have closesAt === finalDeadline.
  *
  * This is the STRICT window, matching the times actually communicated to
  * students (e.g. "closes 11:59 PM") — use this for anything UI-facing
@@ -28,11 +32,12 @@ export async function getAllWaveSchedule() {
  * enforcement below.
  */
 export function isWindowOpen(
-  wave: { opensAt: Date; closesAt: Date } | null,
+  wave: { opensAt: Date } | null,
+  finalDeadline: Date | null,
   now: Date = new Date(),
 ): boolean {
-  if (!wave) return false;
-  return now >= wave.opensAt && now < wave.closesAt;
+  if (!wave || !finalDeadline) return false;
+  return now >= wave.opensAt && now < finalDeadline;
 }
 
 /**
@@ -53,18 +58,19 @@ export function isWindowOpen(
 export const GRACE_PERIOD_MS = 5 * 60 * 1000;
 
 export function isSubmissionAccepted(
-  wave: { opensAt: Date; closesAt: Date } | null,
+  wave: { opensAt: Date } | null,
+  finalDeadline: Date | null,
   now: Date = new Date(),
 ): boolean {
-  if (!wave) return false;
+  if (!wave || !finalDeadline) return false;
   const gracedOpen = wave.opensAt.getTime() - GRACE_PERIOD_MS;
-  const gracedClose = wave.closesAt.getTime() + GRACE_PERIOD_MS;
+  const gracedClose = finalDeadline.getTime() + GRACE_PERIOD_MS;
   return now.getTime() >= gracedOpen && now.getTime() < gracedClose;
 }
 
-/** The timestamp the overnight sort should wait for before treating a wave as closed — see isSubmissionAccepted. */
-export function gracedCloseTime(closesAt: Date): Date {
-  return new Date(closesAt.getTime() + GRACE_PERIOD_MS);
+/** The timestamp a sort pass should wait for before treating its deadline as truly closed — see isSubmissionAccepted. */
+export function gracedCloseTime(deadline: Date): Date {
+  return new Date(deadline.getTime() + GRACE_PERIOD_MS);
 }
 
 const PHASE_OFFSET_MS = 60 * 60 * 1000; // 1 hour — comfortably outside the 5-min grace window either side

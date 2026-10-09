@@ -1,16 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f1e4f3;
-  --foreground: #4a1942;
+  --background: #fff6cc;
+  --foreground: #001233;
 
-  /* Palette — soft pink through vivid magenta, dark plum for text/accents. */
-  --color-mist: #d6d2d2;
-  --color-blush: #f1e4f3;
-  --color-petal: #f4bbd3;
-  --color-rose: #f686bd;
-  --color-magenta: #fe5d9f;
-  --color-plum: #4a1942;
+  /* Palette — navy through sky blue, gold accent, pale cream background. */
+  --color-mist: #a2d6f9;
+  --color-blush: #fff6cc;
+  --color-petal: #a2d6f9;
+  --color-rose: #001233;
+  --color-magenta: #023e7d;
+  --color-plum: #001233;
+  --color-gold: #ffbc42;
 }
 
 @theme inline {
@@ -21,6 +22,7 @@
   --color-petal: var(--color-petal);
   --color-rose: var(--color-rose);
   --color-magenta: var(--color-magenta);
+  --color-gold: var(--color-gold);
   --color-plum: var(--color-plum);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);

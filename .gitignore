@@ -43,3 +43,6 @@ next-env.d.ts
 
 # real student PII — roster exports never belong in git history
 *.csv
+
+# source briefs/catalogs dropped in for reference — large, and not code
+/real_day_edits

@@ -42,19 +42,32 @@ export async function GET(request: Request) {
   }
 
   const wave = await getWaveScheduleForGrade(rosterRow.grade);
+  const finalDeadline = eventConfig.finalSubmissionDeadline;
   const effectiveNow = timePhase ? simulatedNowForPhase(wave, timePhase) : new Date();
   return NextResponse.json({
     submission,
-    waveOpen: isWindowOpen(wave, effectiveNow),
+    waveOpen: isWindowOpen(wave, finalDeadline, effectiveNow),
     grade: rosterRow.grade,
-    closesAt: wave?.closesAt ?? null,
+    closesAt: finalDeadline,
     opensAt: wave?.opensAt ?? null,
     sortedAt: wave?.sortedAt ?? null,
     released,
     // Withheld entirely (not just hidden client-side) until the owner
     // deliberately releases — a curious student reading the network tab
     // shouldn't see their assignment early just because sorting already ran.
-    assignment: released && assignment ? { tripName: assignment.tripName } : null,
+    // Full trip details (not just the name) per the real event's brief —
+    // students see exactly what they saw while signing up, not the roster.
+    assignment:
+      released && assignment
+        ? {
+            tripName: assignment.tripName,
+            description: assignment.tripDescription,
+            facultyLead: assignment.facultyLead,
+            startTime: assignment.startTime,
+            endTime: assignment.endTime,
+            travelMethod: assignment.travelMethod,
+          }
+        : null,
   });
 }
 
@@ -94,9 +107,12 @@ export async function POST(request: Request) {
   // shows — see isSubmissionAccepted's doc comment. A simulated student
   // with a time phase chosen gets a fake "now" for this check only — see
   // simulatedNowForPhase; every other student's gating is unaffected.
-  const wave = await getWaveScheduleForGrade(rosterRow.grade);
+  const [wave, eventConfig] = await Promise.all([
+    getWaveScheduleForGrade(rosterRow.grade),
+    getEventConfig(),
+  ]);
   const effectiveNow = timePhase ? simulatedNowForPhase(wave, timePhase) : new Date();
-  if (!isSubmissionAccepted(wave, effectiveNow)) {
+  if (!isSubmissionAccepted(wave, eventConfig.finalSubmissionDeadline, effectiveNow)) {
     return NextResponse.json(
       { error: "wave_not_open", grade: rosterRow.grade },
       { status: 403 },

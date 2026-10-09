@@ -1,13 +1,21 @@
 import { NextResponse } from "next/server";
 import { getAllWaveSchedule, gracedCloseTime } from "@/db/queries/waves";
-import { runLotteryForWave } from "@/lib/lottery";
+import { getEventConfig } from "@/db/queries/event-config";
+import { runLotteryPass1, runLotteryPass2 } from "@/lib/lottery";
 
 /**
- * Vercel Cron target (§10, §11). Hobby plan allows once-daily cron
- * frequency, which is all we need: check once a day whether any wave's
- * closes_at has passed without a sort having run yet, and run it if so.
- * Vercel injects `Authorization: Bearer $CRON_SECRET` automatically on
- * requests it makes to this route in production.
+ * Vercel Cron target. Hobby plan allows once-daily cron frequency — which
+ * means this is a best-effort BACKSTOP, not the real "5 minutes after the
+ * deadline" trigger the 2026 brief calls for. A once-daily cron cannot hit
+ * a precise 5-minute window; for real same-day accuracy, trigger Pass 1 /
+ * Pass 2 manually from the admin dashboard's "Event operations" section at
+ * the right time instead. This still catches either pass within the same
+ * day if the manual trigger is missed.
+ *
+ * Pass 1 fires once per-grade senior/junior sortedAt is still null and the
+ * senior wave's (priority) closesAt + grace has passed. Pass 2 fires once
+ * sophomore/freshman sortedAt is still null and the shared
+ * finalSubmissionDeadline + grace has passed.
  */
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -16,16 +24,23 @@ export async function GET(request: Request) {
   }
 
   const now = new Date();
-  const schedule = await getAllWaveSchedule();
-  const results = [];
+  const [schedule, eventConfig] = await Promise.all([getAllWaveSchedule(), getEventConfig()]);
+  const seniorWave = schedule.find((w) => w.grade === "senior");
+  const sophomoreWave = schedule.find((w) => w.grade === "sophomore");
+  const results: unknown[] = [];
 
-  for (const wave of schedule) {
-    if (wave.sortedAt !== null) continue;
-    // Wait out the same grace period submissions get, so a late-but-graced
-    // submission is guaranteed to land before the lottery runs.
-    if (gracedCloseTime(wave.closesAt) > now) continue;
-    results.push(await runLotteryForWave(wave.wave, "cron"));
+  if (seniorWave && seniorWave.sortedAt === null && gracedCloseTime(seniorWave.closesAt) <= now) {
+    results.push(await runLotteryPass1("cron"));
   }
 
-  return NextResponse.json({ ranWaves: results });
+  if (
+    sophomoreWave &&
+    sophomoreWave.sortedAt === null &&
+    eventConfig.finalSubmissionDeadline !== null &&
+    gracedCloseTime(eventConfig.finalSubmissionDeadline) <= now
+  ) {
+    results.push(await runLotteryPass2("cron"));
+  }
+
+  return NextResponse.json({ ranPasses: results });
 }

@@ -287,36 +287,43 @@ program
 
 program
   .command("set-event-dates")
-  .description("Set change-request-window-end / final-lock dates")
+  .description("Set change-request-window-end / final-lock / final-submission-deadline dates")
   .option("--change-window-end <iso>", "change-request window end timestamp")
   .option("--final-lock <iso>", "final lock timestamp (UI-copy only, per §5)")
-  .action(async (opts: { changeWindowEnd?: string; finalLock?: string }) => {
-    const who = ownerIdentity();
-    const [existing] = await db.select().from(eventConfig).limit(1);
-    if (!existing) {
-      console.error("No event_config row yet — run `npm run seed:owner` first.");
-      process.exit(1);
-    }
+  .option(
+    "--final-submission-deadline <iso>",
+    "shared hard submission cutoff for every grade (see schema.ts's event_config comment)",
+  )
+  .action(
+    async (opts: { changeWindowEnd?: string; finalLock?: string; finalSubmissionDeadline?: string }) => {
+      const who = ownerIdentity();
+      const [existing] = await db.select().from(eventConfig).limit(1);
+      if (!existing) {
+        console.error("No event_config row yet — run `npm run seed:owner` first.");
+        process.exit(1);
+      }
 
-    const update: Record<string, Date> = {};
-    if (opts.changeWindowEnd) update.changeRequestWindowEndsAt = new Date(opts.changeWindowEnd);
-    if (opts.finalLock) update.finalLockAt = new Date(opts.finalLock);
+      const update: Record<string, Date> = {};
+      if (opts.changeWindowEnd) update.changeRequestWindowEndsAt = new Date(opts.changeWindowEnd);
+      if (opts.finalLock) update.finalLockAt = new Date(opts.finalLock);
+      if (opts.finalSubmissionDeadline) update.finalSubmissionDeadline = new Date(opts.finalSubmissionDeadline);
 
-    if (Object.keys(update).length === 0) {
-      console.error("Pass at least one of --change-window-end, --final-lock.");
-      process.exit(1);
-    }
+      if (Object.keys(update).length === 0) {
+        console.error("Pass at least one of --change-window-end, --final-lock, --final-submission-deadline.");
+        process.exit(1);
+      }
 
-    await db.transaction(async (tx) => {
-      await tx.update(eventConfig).set(update).where(eq(eventConfig.id, existing.id));
-      await tx.insert(changeLog).values({
-        who,
-        action: "set_event_dates",
-        toTrip: JSON.stringify(update),
+      await db.transaction(async (tx) => {
+        await tx.update(eventConfig).set(update).where(eq(eventConfig.id, existing.id));
+        await tx.insert(changeLog).values({
+          who,
+          action: "set_event_dates",
+          toTrip: JSON.stringify(update),
+        });
       });
-    });
 
-    console.log("Updated event_config:", update);
-  });
+      console.log("Updated event_config:", update);
+    },
+  );
 
 program.parseAsync(process.argv).then(() => process.exit(0));

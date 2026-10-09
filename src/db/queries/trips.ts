@@ -15,6 +15,10 @@ export async function getTripsWithCounts() {
       description: trips.description,
       capacity: trips.capacity,
       chaperoneTeacherEmail: trips.chaperoneTeacherEmail,
+      facultyLead: trips.facultyLead,
+      startTime: trips.startTime,
+      endTime: trips.endTime,
+      travelMethod: trips.travelMethod,
       seatsFilled: sql<number>`count(${assignments.id})`.mapWith(Number),
     })
     .from(trips)

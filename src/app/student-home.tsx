@@ -2,16 +2,20 @@
 
 import { useEffect, useState } from "react";
 
-interface Trip {
+export interface Trip {
   id: string;
   name: string;
   description: string;
   seatsRemaining: number;
   capacity: number;
   chaperoneTeacherEmail: string | null;
+  facultyLead: string | null;
+  startTime: string | null;
+  endTime: string | null;
+  travelMethod: string | null;
 }
 
-interface SubmissionRecord {
+export interface SubmissionRecord {
   optedOut: boolean;
   tripChoice1: string | null;
   tripChoice2: string | null;
@@ -21,7 +25,16 @@ interface SubmissionRecord {
   parentPhone: string | null;
 }
 
-interface SubmissionStatus {
+export interface AssignedTrip {
+  tripName: string;
+  description: string | null;
+  facultyLead: string | null;
+  startTime: string | null;
+  endTime: string | null;
+  travelMethod: string | null;
+}
+
+export interface SubmissionStatus {
   submission: SubmissionRecord | null;
   waveOpen: boolean;
   grade: string | null;
@@ -29,10 +42,10 @@ interface SubmissionStatus {
   closesAt: string | null;
   sortedAt: string | null;
   released: boolean;
-  assignment: { tripName: string } | null;
+  assignment: AssignedTrip | null;
 }
 
-interface WaiverStatus {
+export interface WaiverStatus {
   assignment: {
     tripName: string;
     waiverRequired: boolean;
@@ -44,14 +57,16 @@ interface WaiverStatus {
 
 const ORGANIZER_EMAIL = "ananya.k.mehta@gmail.com";
 
-// "MISSED"/"WAITING" split on whether a submission exists once the strict
-// (front-end) deadline has passed — see waves.ts's isWindowOpen vs.
+// OPTED_OUT/MISSED/WAITING all only replace the editable form (B) once the
+// front-end deadline has passed — see waves.ts's isWindowOpen vs.
 // isSubmissionAccepted doc comments. The backend still accepts a save
 // during the grace buffer after this deadline; this state split is purely
 // about what the page SHOWS, computed once at load (no polling), which is
 // exactly why a student mid-edit when the deadline passes isn't yanked
 // off the ranking screen — they only see this on their next page load.
-type StudentState = "A" | "B" | "WAITING" | "MISSED" | "D" | "UNPLACED";
+// Before the deadline, submitting (ranked or opted-out) doesn't lock the
+// form — a student can still come back and change their mind.
+type StudentState = "NOT_OPEN" | "B" | "WAITING" | "OPTED_OUT" | "MISSED" | "D" | "UNPLACED";
 
 function deriveState(status: SubmissionStatus): StudentState {
   // Assignment/sort outcomes are withheld until the owner releases them
@@ -61,12 +76,23 @@ function deriveState(status: SubmissionStatus): StudentState {
   if (status.released && status.sortedAt && !status.assignment) return "UNPLACED";
 
   const closesAtMs = status.closesAt ? new Date(status.closesAt).getTime() : null;
-  if (closesAtMs !== null && Date.now() >= closesAtMs) {
-    return status.submission ? "WAITING" : "MISSED";
+  const pastDeadline = closesAtMs !== null && Date.now() >= closesAtMs;
+
+  if (pastDeadline || !status.waveOpen) {
+    if (pastDeadline) {
+      if (!status.submission) return "MISSED";
+      return status.submission.optedOut ? "OPTED_OUT" : "WAITING";
+    }
+    if (status.opensAt && Date.now() < new Date(status.opensAt).getTime()) return "NOT_OPEN";
+    // Shouldn't normally land here (wave not open, not yet past deadline,
+    // not before opensAt) — fall back to whatever the submission implies.
+    if (status.submission) {
+      return status.submission.optedOut ? "OPTED_OUT" : "WAITING";
+    }
+    return "NOT_OPEN";
   }
-  if (status.waveOpen) return "B";
-  if (status.opensAt && Date.now() < new Date(status.opensAt).getTime()) return "A";
-  return "WAITING";
+
+  return "B";
 }
 
 export function StudentHome({
@@ -102,11 +128,12 @@ export function StudentHome({
 
   return (
     <div className="flex flex-col gap-6">
-      {state === "A" && <StateA trips={trips} opensAt={status.opensAt} />}
+      {state === "NOT_OPEN" && <StateNotOpen trips={trips} />}
       {state === "B" && (
         <StateB trips={trips} status={status} closesAt={status.closesAt} onSaved={reload} />
       )}
       {state === "WAITING" && <StateWaiting submission={status.submission!} trips={trips} />}
+      {state === "OPTED_OUT" && <StateOptedOut />}
       {state === "MISSED" && <StateMissed trips={trips} />}
       {state === "UNPLACED" && <StateUnplaced />}
       {state === "D" && (
@@ -122,25 +149,31 @@ export function StudentHome({
   );
 }
 
-function StateA({ trips, opensAt }: { trips: Trip[]; opensAt: string | null }) {
+export function TripDetails({ t }: { t: Trip }) {
+  return (
+    <p className="text-xs text-plum/60">
+      {t.facultyLead && <>Faculty: {t.facultyLead} · </>}
+      {t.startTime && t.endTime && (
+        <>
+          {t.startTime} – {t.endTime} ·{" "}
+        </>
+      )}
+      {t.travelMethod && <>{t.travelMethod} · </>}
+      {t.seatsRemaining}/{t.capacity} seats left
+    </p>
+  );
+}
+
+export function StateNotOpen({ trips }: { trips: Trip[] }) {
   return (
     <section>
-      <h2 className="mb-1 text-lg font-semibold text-plum">Trips</h2>
-      {opensAt && (
-        <p className="mb-3 text-sm text-plum/70">
-          Your grade&apos;s signup opens {new Date(opensAt).toLocaleString(undefined, {
-            weekday: "long",
-            hour: "numeric",
-            minute: "2-digit",
-          })}
-          .
-        </p>
-      )}
+      <h2 className="mb-3 text-lg font-semibold text-plum">Selection is not open for your grade</h2>
       <ul className="flex flex-col gap-2 text-sm">
         {trips.map((t) => (
           <li key={t.id} className="rounded border border-petal bg-white p-3">
             <p className="font-medium text-plum">{t.name}</p>
             <p className="text-plum/70">{t.description}</p>
+            <TripDetails t={t} />
           </li>
         ))}
       </ul>
@@ -148,7 +181,7 @@ function StateA({ trips, opensAt }: { trips: Trip[]; opensAt: string | null }) {
   );
 }
 
-function StateB({
+export function StateB({
   trips,
   status,
   closesAt,
@@ -222,7 +255,7 @@ function StateB({
           checked={optedOut}
           onChange={(e) => setOptedOut(e.target.checked)}
         />
-        I&apos;m not going
+        I know I am not going to be here
       </label>
 
       <div className="flex flex-col gap-2 text-sm sm:flex-row sm:gap-4">
@@ -260,7 +293,7 @@ function StateB({
                 <li key={t.id}>
                   <label
                     className={`flex items-start gap-3 rounded border p-3 ${
-                      selected ? "border-magenta bg-petal/40" : "border-petal bg-white"
+                      selected ? "border-gold bg-gold/15" : "border-petal bg-white"
                     } ${disabled ? "opacity-50" : "cursor-pointer"}`}
                   >
                     <input
@@ -272,7 +305,7 @@ function StateB({
                     />
                     <span
                       className={`mt-0.5 flex h-6 w-6 flex-none items-center justify-center rounded-full border text-xs font-semibold ${
-                        selected ? "border-magenta bg-magenta text-white" : "border-plum/30"
+                        selected ? "border-gold bg-gold text-plum" : "border-plum/30"
                       }`}
                     >
                       {selected ? rank + 1 : ""}
@@ -280,10 +313,7 @@ function StateB({
                     <span>
                       <p className="font-medium text-plum">{t.name}</p>
                       <p className="text-plum/70">{t.description || "Description coming soon."}</p>
-                      <p className="text-xs text-plum/60">
-                        Chaperone: {t.chaperoneTeacherEmail ?? "Not yet assigned"} · {t.seatsRemaining}/
-                        {t.capacity} seats left
-                      </p>
+                      <TripDetails t={t} />
                     </span>
                   </label>
                 </li>
@@ -318,8 +348,8 @@ function StateB({
   );
 }
 
-/** Shown once the deadline's passed for a student who did submit — lets them confirm what they chose while waiting on release. */
-function StateWaiting({ submission, trips }: { submission: SubmissionRecord; trips: Trip[] }) {
+/** Shown once the deadline's passed for a student who ranked trips — lets them confirm what they chose while waiting on release. */
+export function StateWaiting({ submission, trips }: { submission: SubmissionRecord; trips: Trip[] }) {
   const tripById = new Map(trips.map((t) => [t.id, t]));
   const choiceIds = [
     submission.tripChoice1,
@@ -330,38 +360,51 @@ function StateWaiting({ submission, trips }: { submission: SubmissionRecord; tri
 
   return (
     <section className="flex flex-col gap-3">
-      <p className="text-sm text-plum/70">You&apos;re all set! Trip assignments will be posted soon.</p>
-      {submission.optedOut ? (
-        <p className="text-sm text-plum/70">You opted out of this event.</p>
-      ) : (
-        <ol className="flex flex-col gap-2 text-sm">
-          {choiceIds.map((id, i) => {
-            const trip = id ? tripById.get(id) : undefined;
-            return (
-              <li key={id ?? i} className="rounded border border-petal bg-white p-3">
-                <p className="font-medium text-plum">
-                  {i + 1}. {trip?.name ?? "Trip no longer listed"}
-                </p>
-                {trip?.description && <p className="text-plum/70">{trip.description}</p>}
-              </li>
-            );
-          })}
-        </ol>
-      )}
+      <p className="text-sm text-plum/70">
+        You have successfully submitted your choices. Trip decisions will be released on October 16.
+      </p>
+      <ol className="flex flex-col gap-2 text-sm">
+        {choiceIds.map((id, i) => {
+          const trip = id ? tripById.get(id) : undefined;
+          return (
+            <li key={id ?? i} className="rounded border border-petal bg-white p-3">
+              <p className="font-medium text-plum">
+                {i + 1}. {trip?.name ?? "Trip no longer listed"}
+              </p>
+              {trip?.description && <p className="text-plum/70">{trip.description}</p>}
+              {trip && <TripDetails t={trip} />}
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  );
+}
+
+/** Shown once the deadline's passed for a student who indicated they're not attending. */
+export function StateOptedOut() {
+  return (
+    <section>
+      <p className="text-sm text-plum/70">
+        You have indicated you are not attending Learning in Action day. Please have a parent/guardian
+        notify Ms. Fiock in the attendance office (via email or phone) on or before October 23rd (we
+        prefer before). This ensures student safety and accurate records.
+      </p>
     </section>
   );
 }
 
 /** Shown when the front-end deadline has passed and the student never submitted anything. */
-function StateMissed({ trips }: { trips: Trip[] }) {
+export function StateMissed({ trips }: { trips: Trip[] }) {
   return (
     <section className="flex flex-col gap-3">
       <p className="text-sm text-plum/70">
-        Sorting has ended for your grade. Please contact{" "}
+        You did not submit your choices in time. You will be manually assigned to an activity with open
+        availability. Please contact{" "}
         <a href={`mailto:${ORGANIZER_EMAIL}`} className="text-plum underline">
           {ORGANIZER_EMAIL}
-        </a>
-        .
+        </a>{" "}
+        with questions.
       </p>
       <div>
         <h3 className="mb-2 text-sm font-semibold text-plum">Trips</h3>
@@ -370,6 +413,7 @@ function StateMissed({ trips }: { trips: Trip[] }) {
             <li key={t.id} className="rounded border border-petal bg-white p-3">
               <p className="font-medium text-plum">{t.name}</p>
               <p className="text-plum/70">{t.description}</p>
+              <TripDetails t={t} />
             </li>
           ))}
         </ul>
@@ -378,7 +422,7 @@ function StateMissed({ trips }: { trips: Trip[] }) {
   );
 }
 
-function StateUnplaced() {
+export function StateUnplaced() {
   return (
     <section>
       <p className="text-sm text-plum/70">
@@ -393,14 +437,14 @@ function StateUnplaced() {
   );
 }
 
-function StateD({
+export function StateD({
   assignment,
   waiver,
   onWaiverChange,
   changeRequestVisible,
   changeRequestWindowEndsAt,
 }: {
-  assignment: { tripName: string };
+  assignment: AssignedTrip;
   waiver: WaiverStatus["assignment"];
   onWaiverChange: () => void;
   changeRequestVisible: boolean;
@@ -410,6 +454,17 @@ function StateD({
     <section className="flex flex-col gap-2">
       <h2 className="text-lg font-semibold text-plum">Your trip</h2>
       <p className="text-xl text-plum">{assignment.tripName}</p>
+      {assignment.description && <p className="text-sm text-plum/70">{assignment.description}</p>}
+      <p className="text-sm text-plum/60">
+        {assignment.facultyLead && <>Faculty: {assignment.facultyLead} · </>}
+        {assignment.startTime && assignment.endTime && (
+          <>
+            {assignment.startTime} – {assignment.endTime}
+            {assignment.travelMethod ? " · " : ""}
+          </>
+        )}
+        {assignment.travelMethod}
+      </p>
       {changeRequestVisible && (
         <p className="text-xs text-plum/60">
           Need a change{changeRequestWindowEndsAt ? ` before ${new Date(changeRequestWindowEndsAt).toLocaleDateString()}` : ""}? Email the event organizer.

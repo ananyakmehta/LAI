@@ -19,6 +19,7 @@ import { AccessManagement } from "./access-management";
 import { ViewAsControl } from "./view-as-control";
 import { SimulationPanel } from "./simulation-panel";
 import { ReleaseAssignmentsControl } from "./release-assignments-control";
+import { SortPassesControl } from "./sort-passes-control";
 import type { Grade } from "@/lib/grade";
 import Link from "next/link";
 
@@ -174,10 +175,29 @@ export default async function AdminPage({
 
       {isOwnerView && eventConfig && (
         <section>
-          <h2 className="mb-2 text-lg font-semibold text-plum">Trip assignments</h2>
-          <ReleaseAssignmentsControl
-            releasedAt={eventConfig.assignmentsReleasedAt?.toISOString() ?? null}
-          />
+          <h2 className="mb-2 text-lg font-semibold text-plum">Event operations</h2>
+          <div className="flex flex-col gap-3">
+            <SortPassesControl />
+            <ReleaseAssignmentsControl
+              releasedAt={eventConfig.assignmentsReleasedAt?.toISOString() ?? null}
+            />
+          </div>
+        </section>
+      )}
+
+      {isOwnerView && (
+        <section>
+          <h2 className="mb-2 text-lg font-semibold text-plum">Screen preview</h2>
+          <p className="mb-2 text-sm text-plum/70">
+            Click through every student-facing screen with sample data — writes nothing to the
+            database, so it&rsquo;s safe to use on real data.
+          </p>
+          <Link
+            href="/admin/preview"
+            className="inline-block rounded border border-rose px-3 py-1 text-sm hover:bg-petal"
+          >
+            Open screen preview
+          </Link>
         </section>
       )}
 
