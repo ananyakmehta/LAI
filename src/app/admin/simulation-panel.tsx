@@ -101,7 +101,7 @@ function AssignRankingsControl({ trips }: { trips: TripOption[] }) {
           type="button"
           onClick={run}
           disabled={status === "running"}
-          className="rounded bg-magenta px-3 py-1 text-white hover:bg-rose disabled:opacity-40"
+          className="rounded bg-magenta px-3 py-1 text-plum hover:bg-rose disabled:opacity-40"
         >
           {status === "running" ? "Submitting…" : "Assign + submit"}
         </button>
@@ -212,7 +212,7 @@ function WaveControl() {
           type="button"
           onClick={() => run("start-wave")}
           disabled={status === "running"}
-          className="rounded bg-magenta px-3 py-1 text-white hover:bg-rose disabled:opacity-40"
+          className="rounded bg-magenta px-3 py-1 text-plum hover:bg-rose disabled:opacity-40"
         >
           Start wave
         </button>
@@ -268,7 +268,7 @@ function SortControl() {
           type="button"
           onClick={run}
           disabled={status === "running"}
-          className="rounded bg-magenta px-3 py-1 text-white hover:bg-rose disabled:opacity-40"
+          className="rounded bg-magenta px-3 py-1 text-plum hover:bg-rose disabled:opacity-40"
         >
           Run sort
         </button>
@@ -310,7 +310,7 @@ function ResetControl() {
           type="button"
           onClick={run}
           disabled={status === "running"}
-          className="rounded bg-magenta px-3 py-1 text-white hover:bg-rose disabled:opacity-40"
+          className="rounded bg-magenta px-3 py-1 text-plum hover:bg-rose disabled:opacity-40"
         >
           Clear everything (every grade)
         </button>

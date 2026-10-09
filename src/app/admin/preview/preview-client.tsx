@@ -98,7 +98,7 @@ export function PreviewClient({ trips }: { trips: Trip[] }) {
             onClick={() => setSelected(opt.key)}
             className={`rounded border px-3 py-1 text-sm ${
               selected === opt.key
-                ? "border-magenta bg-magenta text-white"
+                ? "border-magenta bg-magenta text-plum"
                 : "border-rose hover:bg-petal"
             }`}
           >

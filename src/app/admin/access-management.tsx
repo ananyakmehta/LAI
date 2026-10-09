@@ -116,7 +116,7 @@ export function AccessManagement({ roles, trips }: { roles: RoleRow[]; trips: Tr
         <button
           onClick={handleGrant}
           disabled={!email || (role === "teacher" && !tripId) || status === "saving"}
-          className="rounded bg-magenta px-3 py-1 text-white hover:bg-rose disabled:opacity-40"
+          className="rounded bg-magenta px-3 py-1 text-plum hover:bg-rose disabled:opacity-40"
         >
           Grant
         </button>

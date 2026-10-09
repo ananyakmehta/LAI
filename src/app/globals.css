@@ -1,15 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fff6cc;
+  --background: #a2d6f9;
   --foreground: #001233;
 
-  /* Palette — navy through sky blue, gold accent, pale cream background. */
+  /* Palette — light-blue wash background, navy text/borders, gold accent
+     for buttons and selection states. */
   --color-mist: #a2d6f9;
-  --color-blush: #fff6cc;
+  --color-blush: #a2d6f9;
   --color-petal: #a2d6f9;
   --color-rose: #001233;
-  --color-magenta: #023e7d;
+  --color-magenta: #ffbc42;
   --color-plum: #001233;
   --color-gold: #ffbc42;
 }

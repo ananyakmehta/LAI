@@ -116,7 +116,7 @@ export function ViewAsControl({
           (role === "student" && !email) ||
           (role === "teacher" && !tripId)
         }
-        className="rounded bg-magenta px-3 py-1 text-white hover:bg-rose disabled:opacity-40"
+        className="rounded bg-magenta px-3 py-1 text-plum hover:bg-rose disabled:opacity-40"
       >
         Start
       </button>

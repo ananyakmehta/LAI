@@ -39,7 +39,7 @@ export function ReleaseAssignmentsControl({ releasedAt }: { releasedAt: string |
         type="button"
         onClick={run}
         disabled={status === "running"}
-        className="rounded bg-magenta px-3 py-1 text-white hover:bg-rose disabled:opacity-40"
+        className="rounded bg-magenta px-3 py-1 text-plum hover:bg-rose disabled:opacity-40"
       >
         {status === "running" ? "Releasing…" : releasedAt ? "Re-release trip assignments" : "Release trip assignments to all grades"}
       </button>

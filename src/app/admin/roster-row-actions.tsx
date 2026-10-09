@@ -189,7 +189,7 @@ export function RosterRowActions({
               type="button"
               disabled={!selectedTripId || status === "saving"}
               onClick={() => submitMove(status === "confirm")}
-              className="rounded bg-magenta px-2 py-1 text-white hover:bg-rose disabled:opacity-40"
+              className="rounded bg-magenta px-2 py-1 text-plum hover:bg-rose disabled:opacity-40"
             >
               {status === "confirm" ? "Confirm overbook" : "Move"}
             </button>

@@ -110,7 +110,7 @@ export function MoveNonRespondersPanel({
               type="button"
               onClick={handleMove}
               disabled={selected.size === 0 || overCapacity || status === "saving"}
-              className="rounded bg-magenta px-3 py-1 text-white hover:bg-rose disabled:opacity-40"
+              className="rounded bg-magenta px-3 py-1 text-plum hover:bg-rose disabled:opacity-40"
             >
               {status === "saving" ? "Moving…" : "Move here"}
             </button>
