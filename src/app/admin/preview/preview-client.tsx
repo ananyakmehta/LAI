@@ -11,7 +11,6 @@ import {
   StateD,
   type Trip,
   type SubmissionStatus,
-  type WaiverStatus,
 } from "../../student-home";
 
 const PREVIEW_OPTIONS = [
@@ -21,9 +20,7 @@ const PREVIEW_OPTIONS = [
   { key: "OPTED_OUT", label: "Opted out, waiting for release" },
   { key: "MISSED", label: "Missed the deadline" },
   { key: "UNPLACED", label: "Released, no trip assigned" },
-  { key: "D_NO_WAIVER", label: "Released, assigned (no waiver)" },
-  { key: "D_WAIVER_PENDING", label: "Released, assigned (waiver pending)" },
-  { key: "D_WAIVER_DONE", label: "Released, assigned (waiver done)" },
+  { key: "D", label: "Released, assigned" },
 ] as const;
 
 type PreviewKey = (typeof PREVIEW_OPTIONS)[number]["key"];
@@ -72,22 +69,6 @@ export function PreviewClient({ trips }: { trips: Trip[] }) {
       }
     : null;
 
-  const noWaiver: WaiverStatus = { assignment: null };
-  const waiverPending: WaiverStatus = {
-    assignment: firstTrip
-      ? {
-          tripName: firstTrip.name,
-          waiverRequired: true,
-          waiverUrl: "https://example.com/waiver",
-          waiverDescription: "Example waiver — complete the vendor's own release form before the trip.",
-          acknowledged: false,
-        }
-      : null,
-  };
-  const waiverDone: WaiverStatus = waiverPending.assignment
-    ? { assignment: { ...waiverPending.assignment, acknowledged: true } }
-    : { assignment: null };
-
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap gap-2">
@@ -99,7 +80,7 @@ export function PreviewClient({ trips }: { trips: Trip[] }) {
             className={`rounded border px-3 py-1 text-sm ${
               selected === opt.key
                 ? "border-magenta bg-magenta text-plum"
-                : "border-rose hover:bg-petal"
+                : "border-rose text-blush hover:bg-petal hover:text-plum"
             }`}
           >
             {opt.label}
@@ -107,8 +88,8 @@ export function PreviewClient({ trips }: { trips: Trip[] }) {
         ))}
       </div>
 
-      <div className="rounded border border-petal bg-blush p-4">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-plum/50">
+      <div className="rounded border border-petal p-4">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-blush/50">
           Preview — not real data
         </p>
 
@@ -131,31 +112,9 @@ export function PreviewClient({ trips }: { trips: Trip[] }) {
 
         {selected === "UNPLACED" && <StateUnplaced />}
 
-        {selected === "D_NO_WAIVER" && assignedTrip && (
+        {selected === "D" && assignedTrip && (
           <StateD
             assignment={assignedTrip}
-            waiver={noWaiver.assignment}
-            onWaiverChange={noop}
-            changeRequestVisible={true}
-            changeRequestWindowEndsAt={hoursFromNow(72)}
-          />
-        )}
-
-        {selected === "D_WAIVER_PENDING" && assignedTrip && (
-          <StateD
-            assignment={assignedTrip}
-            waiver={waiverPending.assignment}
-            onWaiverChange={noop}
-            changeRequestVisible={true}
-            changeRequestWindowEndsAt={hoursFromNow(72)}
-          />
-        )}
-
-        {selected === "D_WAIVER_DONE" && assignedTrip && (
-          <StateD
-            assignment={assignedTrip}
-            waiver={waiverDone.assignment}
-            onWaiverChange={noop}
             changeRequestVisible={true}
             changeRequestWindowEndsAt={hoursFromNow(72)}
           />

@@ -54,7 +54,7 @@ export function AccessManagement({ roles, trips }: { roles: RoleRow[]; trips: Tr
 
   return (
     <div className="flex flex-col gap-4">
-      <table className="w-full border-collapse text-left text-sm">
+      <table className="w-full border-collapse text-left text-sm text-blush">
         <thead>
           <tr className="border-b border-petal">
             <th className="py-2 pr-4">Email</th>
@@ -70,7 +70,7 @@ export function AccessManagement({ roles, trips }: { roles: RoleRow[]; trips: Tr
               <td className="py-2 pr-4">{r.role}</td>
               <td className="py-2 pr-4">{r.tripName ?? "—"}</td>
               <td className="py-2 pr-4">
-                <button onClick={() => handleRevoke(r.email)} className="text-red-600 underline">
+                <button onClick={() => handleRevoke(r.email)} className="text-red-400 underline">
                   Revoke
                 </button>
               </td>

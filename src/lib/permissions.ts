@@ -47,12 +47,6 @@ export const can = {
     return actor.role === "owner" || actor.role === "staff_admin";
   },
 
-  viewWaiverStatus(actor: Actor, tripId: string): boolean {
-    if (actor.role === "owner" || actor.role === "staff_admin") return true;
-    if (actor.role === "teacher") return actor.teacherTripId === tripId;
-    return false; // students see only their own status, via a separate narrower check
-  },
-
   viewNamesEmails(actor: Actor, tripId: string): boolean {
     if (actor.role === "owner" || actor.role === "staff_admin") return true;
     if (actor.role === "teacher") return actor.teacherTripId === tripId;

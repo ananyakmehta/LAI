@@ -9,15 +9,11 @@ const EXTRA_HEIGHT_PX = 48;
 /** Floor for the roster box's height so it never scales down into nothing as flagged lists empty out — ~6 full rows plus half of a 7th. */
 const MIN_ROSTER_HEIGHT_PX = 335;
 
-/** Cap on the "No waiver" block's own inner scroll — it can be most of the roster early on, so it gets its own scrollable box instead of stretching the whole column. ~7 lines plus a bit of an 8th. */
-const NO_WAIVER_MAX_HEIGHT_PX = 165;
-
 interface RosterRow {
   name: string;
   email: string;
   grade: string;
   submissionStatus: "none" | "opted_out" | "submitted" | "MANUAL";
-  waiverStatus: "n/a" | "pending" | "done";
   assignedTripId: string | null;
   assignedTripName: string | null;
   parentEmail: string | null;
@@ -44,23 +40,18 @@ const GRADE_LABELS: Record<string, string> = {
   freshman: "Freshman",
 };
 
-type SectionKey = "nonResponders" | "optedOut" | "unplaced" | "noWaiver";
+type SectionKey = "nonResponders" | "optedOut" | "unplaced";
 
 const SECTION_LABELS: Record<SectionKey, string> = {
   nonResponders: "Non-responders",
   optedOut: "Opt-outs",
   unplaced: "Submitted but unplaced",
-  noWaiver: "No waiver",
 };
 
-// "No waiver" starts hidden — it can be most of the roster early on, so it's
-// opt-in rather than shown by default like the other three, which were
-// already always visible before this display control existed.
 const DEFAULT_VISIBLE: Record<SectionKey, boolean> = {
   nonResponders: true,
   optedOut: true,
   unplaced: true,
-  noWaiver: false,
 };
 
 /**
@@ -76,7 +67,6 @@ export function RosterPanel({
   tripOptions,
   nonResponders,
   optedOut,
-  missingWaivers,
   unplaced,
 }: {
   rows: RosterRow[];
@@ -84,7 +74,6 @@ export function RosterPanel({
   tripOptions: TripOption[];
   nonResponders: { grade: string; rows: FlaggedRow[] }[];
   optedOut: { grade: string; rows: FlaggedRow[] }[];
-  missingWaivers: { grade: string; rows: FlaggedRow[] }[];
   unplaced: { grade: string; rows: FlaggedRow[] }[];
 }) {
   const [highlighted, setHighlighted] = useState<string | null>(null);
@@ -131,7 +120,6 @@ export function RosterPanel({
               <th className="py-2 pr-4">Email</th>
               <th className="py-2 pr-4">Grade</th>
               <th className="py-2 pr-4">Submission</th>
-              <th className="py-2 pr-4">Waiver</th>
               <th className="py-2 pr-4">Assigned trip</th>
               <th className="py-2 pr-4">Parent contact</th>
               {canMove && <th className="py-2 pr-4"></th>}
@@ -150,9 +138,6 @@ export function RosterPanel({
                 <td className="py-2 pr-4">{row.email}</td>
                 <td className="py-2 pr-4">{row.grade}</td>
                 <td className="py-2 pr-4">{row.submissionStatus}</td>
-                <td className="py-2 pr-4">
-                  {row.waiverStatus === "n/a" ? "—" : row.waiverStatus === "done" ? "done" : "pending"}
-                </td>
                 <td className="py-2 pr-4">{row.assignedTripName ?? "—"}</td>
                 <td className="py-2 pr-4">
                   {[row.parentEmail, row.parentPhone].filter(Boolean).join(" / ") || "—"}
@@ -217,15 +202,6 @@ export function RosterPanel({
           <div className="rounded border border-petal bg-white p-3">
             <h3 className="mb-1 font-medium text-plum">Submitted but unplaced (all 4 choices were full)</h3>
             <FlaggedList groups={unplaced} onClickName={scrollToStudent} />
-          </div>
-        )}
-
-        {visible.noWaiver && (
-          <div className="rounded border border-petal bg-white p-3">
-            <h3 className="mb-1 font-medium text-plum">No waiver</h3>
-            <div style={{ maxHeight: NO_WAIVER_MAX_HEIGHT_PX }} className="overflow-y-auto">
-              <FlaggedList groups={missingWaivers} onClickName={scrollToStudent} />
-            </div>
           </div>
         )}
       </div>

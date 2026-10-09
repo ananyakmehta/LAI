@@ -5,7 +5,6 @@ import {
   getMasterOverview,
   getUnassignedNonResponders,
   getOptedOut,
-  getMissingWaivers,
   getUnplacedSubmitters,
 } from "@/db/queries/dashboard";
 import { getTripsWithCounts } from "@/db/queries/trips";
@@ -56,9 +55,6 @@ export default async function AdminPage({
   const optedOut = showNonResponders
     ? await Promise.all(GRADES.map((g) => getOptedOut(g)))
     : [];
-  const missingWaivers = showNonResponders
-    ? await Promise.all(GRADES.map((g) => getMissingWaivers(g)))
-    : [];
   const unplaced = showNonResponders
     ? await Promise.all(GRADES.map((g) => getUnplacedSubmitters(g)))
     : [];
@@ -76,19 +72,18 @@ export default async function AdminPage({
 
   const nonRespondersGrouped = GRADES.map((g, i) => ({ grade: g, rows: nonResponders[i] ?? [] }));
   const optedOutGrouped = GRADES.map((g, i) => ({ grade: g, rows: optedOut[i] ?? [] }));
-  const missingWaiversGrouped = GRADES.map((g, i) => ({ grade: g, rows: missingWaivers[i] ?? [] }));
   const unplacedGrouped = GRADES.map((g, i) => ({ grade: g, rows: unplaced[i] ?? [] }));
 
   return (
     <main className="mx-auto flex w-full max-w-[1700px] flex-1 flex-col gap-8 px-6 py-8">
-      <Link href="/" className="text-sm text-plum/60 underline">
+      <Link href="/" className="text-sm text-blush/60 underline">
         &larr; back
       </Link>
-      <h1 className="text-2xl font-semibold text-plum">Admin dashboard</h1>
+      <h1 className="text-2xl font-semibold text-blush">Admin dashboard</h1>
 
       {showViewAsControl && (
         <section>
-          <h2 className="mb-2 text-lg font-semibold text-plum">View as</h2>
+          <h2 className="mb-2 text-lg font-semibold text-blush">View as</h2>
           <ViewAsControl
             rosterOptions={rows.map((r) => ({ email: r.email, name: r.name, grade: r.grade }))}
             trips={tripOptions}
@@ -98,14 +93,14 @@ export default async function AdminPage({
 
       {can.importRosterCsv(actor) && (
         <section>
-          <h2 className="mb-2 text-lg font-semibold text-plum">Master roster upload</h2>
+          <h2 className="mb-2 text-lg font-semibold text-blush">Master roster upload</h2>
           <RosterImport />
         </section>
       )}
 
       <section>
-        <h2 className="mb-2 text-lg font-semibold text-plum">Roster overview</h2>
-        <form className="mb-3 flex flex-wrap items-end gap-3 text-sm" method="get">
+        <h2 className="mb-2 text-lg font-semibold text-blush">Roster overview</h2>
+        <form className="mb-3 flex flex-wrap items-end gap-3 text-sm text-blush" method="get">
           <label className="flex flex-col gap-1">
             Grade
             <select name="grade" defaultValue={grade ?? ""} className="rounded border border-petal bg-white p-1">
@@ -140,14 +135,13 @@ export default async function AdminPage({
           tripOptions={tripOptions}
           nonResponders={nonRespondersGrouped}
           optedOut={optedOutGrouped}
-          missingWaivers={missingWaiversGrouped}
           unplaced={unplacedGrouped}
         />
       </section>
 
       <section>
-        <h2 className="mb-2 text-lg font-semibold text-plum">Trips overview</h2>
-        <table className="w-full border-collapse text-left text-sm">
+        <h2 className="mb-2 text-lg font-semibold text-blush">Trips overview</h2>
+        <table className="w-full border-collapse text-left text-sm text-blush">
           <thead>
             <tr className="border-b border-petal">
               <th className="py-2 pr-4">Trip</th>
@@ -163,7 +157,7 @@ export default async function AdminPage({
                 <td className="py-2 pr-4">{t.seatsFilled}</td>
                 <td className="py-2 pr-4">{t.capacity}</td>
                 <td className="py-2 pr-4">
-                  <Link href={`/admin/trips/${t.id}`} className="text-plum underline">
+                  <Link href={`/admin/trips/${t.id}`} className="text-blush underline">
                     View roster
                   </Link>
                 </td>
@@ -175,7 +169,7 @@ export default async function AdminPage({
 
       {isOwnerView && eventConfig && (
         <section>
-          <h2 className="mb-2 text-lg font-semibold text-plum">Event operations</h2>
+          <h2 className="mb-2 text-lg font-semibold text-blush">Event operations</h2>
           <div className="flex flex-col gap-3">
             <SortPassesControl />
             <ReleaseAssignmentsControl
@@ -187,14 +181,14 @@ export default async function AdminPage({
 
       {isOwnerView && (
         <section>
-          <h2 className="mb-2 text-lg font-semibold text-plum">Screen preview</h2>
-          <p className="mb-2 text-sm text-plum/70">
+          <h2 className="mb-2 text-lg font-semibold text-blush">Screen preview</h2>
+          <p className="mb-2 text-sm text-blush/70">
             Click through every student-facing screen with sample data — writes nothing to the
             database, so it&rsquo;s safe to use on real data.
           </p>
           <Link
             href="/admin/preview"
-            className="inline-block rounded border border-rose px-3 py-1 text-sm hover:bg-petal"
+            className="inline-block rounded border border-rose px-3 py-1 text-sm text-blush hover:bg-petal"
           >
             Open screen preview
           </Link>
@@ -207,7 +201,7 @@ export default async function AdminPage({
             left={
               <>
                 <h2 className="p-2 pb-1 text-lg font-semibold text-plum">Change log</h2>
-                <table className="w-full table-fixed border-collapse text-left text-sm">
+                <table className="w-full table-fixed border-collapse text-left text-sm text-plum">
                   <thead>
                     <tr className="sticky top-0 z-10 border-b border-petal bg-white">
                       <th className="w-[15%] py-2 pr-4 pl-2">When</th>
@@ -237,12 +231,12 @@ export default async function AdminPage({
               <>
                 {showSimulationPanel && (
                   <div>
-                    <h2 className="mb-2 text-lg font-semibold text-plum">Simulation controls</h2>
+                    <h2 className="mb-2 text-lg font-semibold text-blush">Simulation controls</h2>
                     <SimulationPanel trips={tripOptions.map((t) => ({ id: t.id, name: t.name }))} />
                   </div>
                 )}
                 <div>
-                  <h2 className="mb-2 text-lg font-semibold text-plum">Access management</h2>
+                  <h2 className="mb-2 text-lg font-semibold text-blush">Access management</h2>
                   <AccessManagement roles={adminRoles} trips={tripOptions} />
                 </div>
               </>

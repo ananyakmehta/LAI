@@ -45,17 +45,7 @@ export interface SubmissionStatus {
   assignment: AssignedTrip | null;
 }
 
-export interface WaiverStatus {
-  assignment: {
-    tripName: string;
-    waiverRequired: boolean;
-    waiverUrl: string | null;
-    waiverDescription: string | null;
-    acknowledged: boolean;
-  } | null;
-}
-
-const ORGANIZER_EMAIL = "ananya.k.mehta@gmail.com";
+const ORGANIZER_EMAIL = "sobyrne@presentationhs.org";
 
 // OPTED_OUT/MISSED/WAITING all only replace the editable form (B) once the
 // front-end deadline has passed — see waves.ts's isWindowOpen vs.
@@ -104,24 +94,21 @@ export function StudentHome({
 }) {
   const [trips, setTrips] = useState<Trip[] | null>(null);
   const [status, setStatus] = useState<SubmissionStatus | null>(null);
-  const [waiver, setWaiver] = useState<WaiverStatus | null>(null);
 
   const reload = () => {
     Promise.all([
       fetch("/api/trips").then((r) => r.json()),
       fetch("/api/submissions").then((r) => r.json()),
-      fetch("/api/waivers").then((r) => r.json()),
-    ]).then(([tripsData, statusData, waiverData]) => {
+    ]).then(([tripsData, statusData]) => {
       setTrips(tripsData.trips);
       setStatus(statusData);
-      setWaiver(waiverData);
     });
   };
 
   useEffect(reload, []);
 
-  if (!trips || !status || !waiver) {
-    return <p className="p-8 text-sm text-plum/60">Loading…</p>;
+  if (!trips || !status) {
+    return <p className="p-8 text-sm text-blush/70">Loading…</p>;
   }
 
   const state = deriveState(status);
@@ -139,8 +126,6 @@ export function StudentHome({
       {state === "D" && (
         <StateD
           assignment={status.assignment!}
-          waiver={waiver.assignment}
-          onWaiverChange={reload}
           changeRequestVisible={changeRequestVisible}
           changeRequestWindowEndsAt={changeRequestWindowEndsAt}
         />
@@ -167,7 +152,7 @@ export function TripDetails({ t }: { t: Trip }) {
 export function StateNotOpen({ trips }: { trips: Trip[] }) {
   return (
     <section>
-      <h2 className="mb-3 text-lg font-semibold text-plum">Selection is not open for your grade</h2>
+      <h2 className="mb-3 text-lg font-semibold text-blush">Selection is not open for your grade</h2>
       <ul className="flex flex-col gap-2 text-sm">
         {trips.map((t) => (
           <li key={t.id} className="rounded border border-petal bg-white p-3">
@@ -237,9 +222,9 @@ export function StateB({
 
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="text-lg font-semibold text-plum">Your ranked choices</h2>
+      <h2 className="text-lg font-semibold text-blush">Your ranked choices</h2>
       {closesAt && (
-        <p className="text-sm text-plum/70">
+        <p className="text-sm text-blush/70">
           Submit by {new Date(closesAt).toLocaleString(undefined, {
             weekday: "long",
             hour: "numeric",
@@ -249,7 +234,7 @@ export function StateB({
         </p>
       )}
 
-      <label className="flex items-center gap-2 text-sm">
+      <label className="flex items-center gap-2 text-sm text-blush">
         <input
           type="checkbox"
           checked={optedOut}
@@ -258,12 +243,12 @@ export function StateB({
         I know I am not going to be here
       </label>
 
-      <div className="flex flex-col gap-2 text-sm sm:flex-row sm:gap-4">
+      <div className="flex flex-col gap-2 text-sm text-blush sm:flex-row sm:gap-4">
         <label className="flex flex-1 flex-col gap-1">
           Parent/guardian email
           <input
             type="email"
-            className="rounded border border-petal bg-white p-2"
+            className="rounded border border-petal bg-white p-2 text-plum"
             value={parentEmail}
             onChange={(e) => setParentEmail(e.target.value)}
           />
@@ -272,7 +257,7 @@ export function StateB({
           Parent/guardian phone
           <input
             type="tel"
-            className="rounded border border-petal bg-white p-2"
+            className="rounded border border-petal bg-white p-2 text-plum"
             value={parentPhone}
             onChange={(e) => setParentPhone(e.target.value)}
           />
@@ -281,7 +266,7 @@ export function StateB({
 
       {!optedOut && (
         <div className="flex flex-col gap-2">
-          <p className="text-sm text-plum/70">
+          <p className="text-sm text-blush/70">
             Tap trips in the order you&apos;d prefer them — first tap is your #1 choice.
           </p>
           <ul className="flex flex-col gap-2 text-sm">
@@ -293,7 +278,7 @@ export function StateB({
                 <li key={t.id}>
                   <label
                     className={`flex items-start gap-3 rounded border p-3 ${
-                      selected ? "border-gold bg-gold/15" : "border-petal bg-white"
+                      selected ? "border-magenta bg-petal" : "border-petal bg-white"
                     } ${disabled ? "opacity-50" : "cursor-pointer"}`}
                   >
                     <input
@@ -305,7 +290,7 @@ export function StateB({
                     />
                     <span
                       className={`mt-0.5 flex h-6 w-6 flex-none items-center justify-center rounded-full border text-xs font-semibold ${
-                        selected ? "border-gold bg-gold text-plum" : "border-plum/30"
+                        selected ? "border-magenta bg-magenta text-plum" : "border-plum/30"
                       }`}
                     >
                       {selected ? rank + 1 : ""}
@@ -331,7 +316,7 @@ export function StateB({
         {saveState === "saving" ? "Saving…" : "Save"}
       </button>
       {saveState === "saved" && (
-        <p className="text-sm text-green-700">
+        <p className="text-sm text-green-300">
           Saved! You can change your selection any time before the deadline
           {closesAt
             ? ` at ${new Date(closesAt).toLocaleString(undefined, {
@@ -343,7 +328,7 @@ export function StateB({
           .
         </p>
       )}
-      {saveState === "error" && errorMessage && <p className="text-sm text-red-600">{errorMessage}</p>}
+      {saveState === "error" && errorMessage && <p className="text-sm text-red-300">{errorMessage}</p>}
     </section>
   );
 }
@@ -360,7 +345,7 @@ export function StateWaiting({ submission, trips }: { submission: SubmissionReco
 
   return (
     <section className="flex flex-col gap-3">
-      <p className="text-sm text-plum/70">
+      <p className="text-sm text-blush/70">
         You have successfully submitted your choices. Trip decisions will be released on October 16.
       </p>
       <ol className="flex flex-col gap-2 text-sm">
@@ -385,7 +370,7 @@ export function StateWaiting({ submission, trips }: { submission: SubmissionReco
 export function StateOptedOut() {
   return (
     <section>
-      <p className="text-sm text-plum/70">
+      <p className="text-sm text-blush/70">
         You have indicated you are not attending Learning in Action day. Please have a parent/guardian
         notify Ms. Fiock in the attendance office (via email or phone) on or before October 23rd (we
         prefer before). This ensures student safety and accurate records.
@@ -398,16 +383,16 @@ export function StateOptedOut() {
 export function StateMissed({ trips }: { trips: Trip[] }) {
   return (
     <section className="flex flex-col gap-3">
-      <p className="text-sm text-plum/70">
+      <p className="text-sm text-blush/70">
         You did not submit your choices in time. You will be manually assigned to an activity with open
         availability. Please contact{" "}
-        <a href={`mailto:${ORGANIZER_EMAIL}`} className="text-plum underline">
+        <a href={`mailto:${ORGANIZER_EMAIL}`} className="text-blush underline">
           {ORGANIZER_EMAIL}
         </a>{" "}
         with questions.
       </p>
       <div>
-        <h3 className="mb-2 text-sm font-semibold text-plum">Trips</h3>
+        <h3 className="mb-2 text-sm font-semibold text-blush">Trips</h3>
         <ul className="flex flex-col gap-2 text-sm">
           {trips.map((t) => (
             <li key={t.id} className="rounded border border-petal bg-white p-3">
@@ -425,10 +410,9 @@ export function StateMissed({ trips }: { trips: Trip[] }) {
 export function StateUnplaced() {
   return (
     <section>
-      <p className="text-sm text-plum/70">
-        Sorting has completed for your grade, but you don&apos;t have a trip assignment yet. Please
-        contact{" "}
-        <a href={`mailto:${ORGANIZER_EMAIL}`} className="text-plum underline">
+      <p className="text-sm text-blush/70">
+        Trips have been released, but you don&apos;t have a trip assignment yet. Please contact{" "}
+        <a href={`mailto:${ORGANIZER_EMAIL}`} className="text-blush underline">
           {ORGANIZER_EMAIL}
         </a>
         .
@@ -439,23 +423,19 @@ export function StateUnplaced() {
 
 export function StateD({
   assignment,
-  waiver,
-  onWaiverChange,
   changeRequestVisible,
   changeRequestWindowEndsAt,
 }: {
   assignment: AssignedTrip;
-  waiver: WaiverStatus["assignment"];
-  onWaiverChange: () => void;
   changeRequestVisible: boolean;
   changeRequestWindowEndsAt: string | null;
 }) {
   return (
     <section className="flex flex-col gap-2">
-      <h2 className="text-lg font-semibold text-plum">Your trip</h2>
-      <p className="text-xl text-plum">{assignment.tripName}</p>
-      {assignment.description && <p className="text-sm text-plum/70">{assignment.description}</p>}
-      <p className="text-sm text-plum/60">
+      <h2 className="text-lg font-semibold text-blush">Your trip</h2>
+      <p className="text-xl text-blush">{assignment.tripName}</p>
+      {assignment.description && <p className="text-sm text-blush/70">{assignment.description}</p>}
+      <p className="text-sm text-blush/60">
         {assignment.facultyLead && <>Faculty: {assignment.facultyLead} · </>}
         {assignment.startTime && assignment.endTime && (
           <>
@@ -466,74 +446,10 @@ export function StateD({
         {assignment.travelMethod}
       </p>
       {changeRequestVisible && (
-        <p className="text-xs text-plum/60">
+        <p className="text-xs text-blush/60">
           Need a change{changeRequestWindowEndsAt ? ` before ${new Date(changeRequestWindowEndsAt).toLocaleDateString()}` : ""}? Email the event organizer.
         </p>
       )}
-      {waiver && <TripWaiver waiver={waiver} onChange={onWaiverChange} />}
     </section>
-  );
-}
-
-/**
- * Waivers are trip-specific and external — some trips (rock climbing, etc.)
- * have their own release form on the vendor's own site, so this is a link +
- * description + self-report checkbox, never a file upload. Trips that don't
- * need one just say so.
- */
-function TripWaiver({
-  waiver,
-  onChange,
-}: {
-  waiver: NonNullable<WaiverStatus["assignment"]>;
-  onChange: () => void;
-}) {
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(false);
-
-  async function toggle(acknowledged: boolean) {
-    setSaving(true);
-    setError(false);
-    const res = await fetch("/api/waivers", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ acknowledged }),
-    });
-    setSaving(false);
-    if (res.ok) onChange();
-    else setError(true);
-  }
-
-  return (
-    <div className="flex flex-col gap-2 border-t border-petal pt-4">
-      <h3 className="text-sm font-semibold text-plum">Waiver</h3>
-      {!waiver.waiverRequired ? (
-        <p className="text-sm text-plum/70">No waiver required for this trip.</p>
-      ) : (
-        <div className="flex flex-col gap-2 text-sm">
-          {waiver.waiverDescription && <p className="text-plum/70">{waiver.waiverDescription}</p>}
-          {waiver.waiverUrl && (
-            <a
-              href={waiver.waiverUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="w-fit text-plum underline"
-            >
-              Open the waiver form
-            </a>
-          )}
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={waiver.acknowledged}
-              disabled={saving}
-              onChange={(e) => toggle(e.target.checked)}
-            />
-            I&apos;ve completed this waiver
-          </label>
-          {error && <p className="text-sm text-red-600">Something went wrong — try again.</p>}
-        </div>
-      )}
-    </div>
   );
 }

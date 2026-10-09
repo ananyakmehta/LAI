@@ -5,7 +5,7 @@ export async function TeacherHome({ tripId }: { tripId: string | null }) {
   if (!tripId) {
     return (
       <section>
-        <p className="text-sm text-plum/70">You haven&apos;t been assigned a trip yet.</p>
+        <p className="text-sm text-blush/70">You haven&apos;t been assigned a trip yet.</p>
       </section>
     );
   }
@@ -19,7 +19,7 @@ export async function TeacherHome({ tripId }: { tripId: string | null }) {
   if (!trip) {
     return (
       <section>
-        <p className="text-sm text-plum/70">You haven&apos;t been assigned a trip yet.</p>
+        <p className="text-sm text-blush/70">You haven&apos;t been assigned a trip yet.</p>
       </section>
     );
   }
@@ -29,16 +29,15 @@ export async function TeacherHome({ tripId }: { tripId: string | null }) {
   return (
     <div className="flex flex-col gap-6">
       <section>
-        <h2 className="text-lg font-semibold text-plum">{trip.name}</h2>
-        <p className="mb-3 text-sm text-plum/70">
+        <h2 className="text-lg font-semibold text-blush">{trip.name}</h2>
+        <p className="mb-3 text-sm text-blush/70">
           {ownRoster.length} / {trip.capacity} confirmed
         </p>
-        <table className="w-full border-collapse text-left text-sm">
+        <table className="w-full border-collapse text-left text-sm text-blush">
           <thead>
             <tr className="border-b border-petal">
               <th className="py-2 pr-4">Name</th>
               <th className="py-2 pr-4">Email</th>
-              <th className="py-2 pr-4">Waiver</th>
             </tr>
           </thead>
           <tbody>
@@ -46,13 +45,6 @@ export async function TeacherHome({ tripId }: { tripId: string | null }) {
               <tr key={r.email} className="border-b border-petal">
                 <td className="py-2 pr-4">{r.name}</td>
                 <td className="py-2 pr-4">{r.email}</td>
-                <td className="py-2 pr-4">
-                  {r.waiverStatus === "n/a"
-                    ? "not required"
-                    : r.waiverStatus === "done"
-                      ? "done"
-                      : "pending"}
-                </td>
               </tr>
             ))}
           </tbody>
@@ -60,8 +52,8 @@ export async function TeacherHome({ tripId }: { tripId: string | null }) {
       </section>
 
       <section>
-        <h2 className="text-sm font-semibold text-plum">Other trips</h2>
-        <ul className="text-sm text-plum/70">
+        <h2 className="text-sm font-semibold text-blush">Other trips</h2>
+        <ul className="text-sm text-blush/70">
           {allTrips
             .filter((t) => t.id !== tripId)
             .map((t) => (

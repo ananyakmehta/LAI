@@ -37,21 +37,20 @@ export default async function TripRosterPage({
 
   return (
     <main className="mx-auto flex max-w-2xl flex-1 flex-col gap-4 p-8">
-      <Link href="/admin" className="text-sm text-plum/60 underline">
+      <Link href="/admin" className="text-sm text-blush/60 underline">
         &larr; back to dashboard
       </Link>
-      <h1 className="text-2xl font-semibold text-plum">{trip.name}</h1>
-      <p className="text-sm text-plum/70">
+      <h1 className="text-2xl font-semibold text-blush">{trip.name}</h1>
+      <p className="text-sm text-blush/70">
         {rows.length} / {trip.capacity} seats filled
       </p>
 
-      <table className="w-full border-collapse text-left text-sm">
+      <table className="w-full border-collapse text-left text-sm text-blush">
         <thead>
           <tr className="border-b border-petal">
             <th className="py-2 pr-4">Name</th>
             <th className="py-2 pr-4">Email</th>
             <th className="py-2 pr-4">Grade</th>
-            <th className="py-2 pr-4">Waiver</th>
           </tr>
         </thead>
         <tbody>
@@ -60,9 +59,6 @@ export default async function TripRosterPage({
               <td className="py-2 pr-4">{row.name}</td>
               <td className="py-2 pr-4">{row.email}</td>
               <td className="py-2 pr-4">{row.grade}</td>
-              <td className="py-2 pr-4">
-                {row.waiverStatus === "n/a" ? "not required" : row.waiverStatus === "done" ? "done" : "pending"}
-              </td>
             </tr>
           ))}
         </tbody>

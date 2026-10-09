@@ -21,12 +21,12 @@ export default async function PreviewPage() {
 
   return (
     <main className="mx-auto flex max-w-2xl flex-1 flex-col gap-6 p-8">
-      <Link href="/admin" className="text-sm text-plum/60 underline">
+      <Link href="/admin" className="text-sm text-blush/60 underline">
         &larr; back to dashboard
       </Link>
       <div>
-        <h1 className="text-2xl font-semibold text-plum">Screen preview</h1>
-        <p className="text-sm text-plum/70">
+        <h1 className="text-2xl font-semibold text-blush">Screen preview</h1>
+        <p className="text-sm text-blush/70">
           Every student-facing screen, with sample data built from the real trip catalog. Nothing here
           writes to the database.
         </p>

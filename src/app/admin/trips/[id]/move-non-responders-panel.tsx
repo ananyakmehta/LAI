@@ -70,9 +70,9 @@ export function MoveNonRespondersPanel({
 
   return (
     <div className="mt-4">
-      <h2 className="mb-2 text-lg font-semibold text-plum">Non-responders</h2>
+      <h2 className="mb-2 text-lg font-semibold text-blush">Non-responders</h2>
       {!anyRows ? (
-        <p className="text-sm text-plum/60">None.</p>
+        <p className="text-sm text-blush/60">None.</p>
       ) : (
         <div className="flex flex-col gap-3 rounded border border-petal bg-white p-3 text-sm">
           {nonResponders.map((g) =>
