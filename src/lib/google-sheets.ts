@@ -61,7 +61,15 @@ export async function syncRosterToGoogleSheet(): Promise<{ rowCount: number }> {
       parentContact(r.parentEmail, r.parentPhone),
       r.assignedTripName ?? "",
     ])
-    .sort((a, b) => a[0].localeCompare(b[0]));
+    // Grouped into one clean contiguous block per trip (alphabetical by trip,
+    // then by student name within it) so a teacher lead can just scroll to
+    // their trip's block — unassigned students sort to the very end rather
+    // than interleaving blank-trip rows between trip blocks.
+    .sort((a, b) => {
+      const tripA = a[4] || "￿";
+      const tripB = b[4] || "￿";
+      return tripA.localeCompare(tripB) || a[0].localeCompare(b[0]);
+    });
 
   const values = [HEADER, ...rows];
   const { token } = await client.getAccessToken();
