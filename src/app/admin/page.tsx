@@ -19,6 +19,7 @@ import { ViewAsControl } from "./view-as-control";
 import { SimulationPanel } from "./simulation-panel";
 import { ReleaseAssignmentsControl } from "./release-assignments-control";
 import { SortPassesControl } from "./sort-passes-control";
+import { GoogleSheetSyncControl } from "./google-sheet-sync-control";
 import type { Grade } from "@/lib/grade";
 import Link from "next/link";
 
@@ -121,10 +122,10 @@ export default async function AdminPage({
               <option value="opted_out">Opted out</option>
             </select>
           </label>
-          <button type="submit" className="rounded border border-rose px-3 py-1 hover:bg-petal">
+          <button type="submit" className="rounded border border-rose px-3 py-1 hover:border-magenta">
             Filter
           </button>
-          <a className="rounded border border-rose px-3 py-1 hover:bg-petal" href={`/api/admin/roster-export`}>
+          <a className="rounded border border-rose px-3 py-1 hover:border-magenta" href={`/api/admin/roster-export`}>
             Export CSV
           </a>
         </form>
@@ -175,6 +176,7 @@ export default async function AdminPage({
             <ReleaseAssignmentsControl
               releasedAt={eventConfig.assignmentsReleasedAt?.toISOString() ?? null}
             />
+            <GoogleSheetSyncControl />
           </div>
         </section>
       )}
@@ -188,7 +190,7 @@ export default async function AdminPage({
           </p>
           <Link
             href="/admin/preview"
-            className="inline-block rounded border border-rose px-3 py-1 text-sm text-blush hover:bg-petal"
+            className="inline-block rounded border border-rose px-3 py-1 text-sm text-blush hover:border-magenta"
           >
             Open screen preview
           </Link>

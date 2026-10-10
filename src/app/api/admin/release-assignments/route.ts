@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { getActor, can } from "@/lib/permissions";
 import { releaseAssignments } from "@/db/queries/event-config";
+import { syncRosterToGoogleSheet, isGoogleSheetsSyncConfigured } from "@/lib/google-sheets";
 
 /**
  * Owner-only: the deliberate reveal step. Sorting itself already ran
@@ -21,5 +22,19 @@ export async function POST() {
   }
 
   const result = await releaseAssignments(actor.email);
-  return NextResponse.json({ ok: true, ...result });
+
+  // Best-effort: release itself has already happened and must not be
+  // blocked or rolled back by a Sheets hiccup. The owner also has the
+  // manual "Sync to Google Sheet" button for a retry or a later roster move.
+  let sheetSync: { ok: true; rowCount: number } | { ok: false; error: string } | null = null;
+  if (isGoogleSheetsSyncConfigured()) {
+    try {
+      const { rowCount } = await syncRosterToGoogleSheet();
+      sheetSync = { ok: true, rowCount };
+    } catch (err) {
+      sheetSync = { ok: false, error: err instanceof Error ? err.message : "Sync failed." };
+    }
+  }
+
+  return NextResponse.json({ ok: true, ...result, sheetSync });
 }

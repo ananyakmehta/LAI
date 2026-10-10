@@ -13,10 +13,12 @@ export function ReleaseAssignmentsControl({ releasedAt }: { releasedAt: string |
   const router = useRouter();
   const [status, setStatus] = useState<"idle" | "running" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
+  const [sheetNote, setSheetNote] = useState<string | null>(null);
 
   async function run() {
     setStatus("running");
     setError(null);
+    setSheetNote(null);
     const res = await fetch("/api/admin/release-assignments", { method: "POST" });
     const data = await res.json();
     if (!res.ok) {
@@ -25,6 +27,13 @@ export function ReleaseAssignmentsControl({ releasedAt }: { releasedAt: string |
       return;
     }
     setStatus("idle");
+    if (data.sheetSync) {
+      setSheetNote(
+        data.sheetSync.ok
+          ? `Google Sheet updated (${data.sheetSync.rowCount} rows).`
+          : `Google Sheet sync failed: ${data.sheetSync.error}`,
+      );
+    }
     router.refresh();
   }
 
@@ -39,11 +48,12 @@ export function ReleaseAssignmentsControl({ releasedAt }: { releasedAt: string |
         type="button"
         onClick={run}
         disabled={status === "running"}
-        className="rounded bg-magenta px-3 py-1 text-plum hover:bg-rose disabled:opacity-40"
+        className="rounded bg-magenta px-3 py-1 text-plum hover:brightness-90 disabled:opacity-40"
       >
         {status === "running" ? "Releasing…" : releasedAt ? "Re-release trip assignments" : "Release trip assignments to all grades"}
       </button>
       {status === "error" && error && <p className="mt-2 text-red-600">{error}</p>}
+      {sheetNote && <p className="mt-2 text-plum/70">{sheetNote}</p>}
     </div>
   );
 }

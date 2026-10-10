@@ -1,17 +1,20 @@
 @import "tailwindcss";
 
 :root {
-  --background: #023e7d;
+  --background: #001233;
   --foreground: #001233;
 
-  /* Palette — pure blues, no yellow. Darker blue page background, light
+  /* Palette — pure blues, no yellow. Darkest blue page background, light
      blue for buttons/selection accents and for text that sits directly on
      the page background (not inside a white/light card), dark navy for
-     text inside white/light cards. */
+     text inside white/light cards. --color-rose is the mid blue — kept
+     distinct from both --background and --color-plum so borders stay
+     visible against the page and hover states never land on a color that
+     matches text sitting on top of it. */
   --color-mist: #a2d6f9;
   --color-blush: #a2d6f9;
   --color-petal: #a2d6f9;
-  --color-rose: #001233;
+  --color-rose: #023e7d;
   --color-magenta: #a2d6f9;
   --color-plum: #001233;
 }

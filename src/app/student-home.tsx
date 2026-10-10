@@ -320,7 +320,7 @@ export function StateB({
       <button
         onClick={handleSubmit}
         disabled={!isComplete || saveState === "saving"}
-        className="w-fit rounded bg-magenta px-4 py-2 text-plum hover:bg-rose disabled:opacity-40"
+        className="w-fit rounded bg-magenta px-4 py-2 text-plum hover:brightness-90 disabled:opacity-40"
       >
         {saveState === "saving" ? "Saving…" : "Save"}
       </button>
