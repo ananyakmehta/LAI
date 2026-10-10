@@ -44,5 +44,8 @@ next-env.d.ts
 # real student PII — roster exports never belong in git history
 *.csv
 
+# Google service account keys — never belong in git history
+lai-signup-*.json
+
 # source briefs/catalogs dropped in for reference — large, and not code
 /real_day_edits
