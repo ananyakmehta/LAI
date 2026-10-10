@@ -135,16 +135,25 @@ export function StudentHome({
 }
 
 export function TripDetails({ t }: { t: Trip }) {
+  // Deliberately no seat counts anywhere, even when not full — a "partial
+  // blind" sort: students can see a trip is already closed off (FULL), but
+  // never the actual number of seats remaining, before or after the first
+  // sort.
+  const full = t.seatsRemaining <= 0;
+  const parts: string[] = [];
+  if (t.facultyLead) parts.push(`Faculty: ${t.facultyLead}`);
+  if (t.startTime && t.endTime) parts.push(`${t.startTime} – ${t.endTime}`);
+  if (t.travelMethod) parts.push(t.travelMethod);
+
   return (
     <p className="text-xs text-plum/60">
-      {t.facultyLead && <>Faculty: {t.facultyLead} · </>}
-      {t.startTime && t.endTime && (
+      {parts.join(" · ")}
+      {full && (
         <>
-          {t.startTime} – {t.endTime} ·{" "}
+          {parts.length > 0 ? " · " : ""}
+          <span className="font-semibold text-red-600">FULL</span>
         </>
       )}
-      {t.travelMethod && <>{t.travelMethod} · </>}
-      {t.seatsRemaining}/{t.capacity} seats left
     </p>
   );
 }
