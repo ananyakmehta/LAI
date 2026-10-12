@@ -20,7 +20,7 @@ export default async function PreviewPage() {
   const trips = await getTripsWithCounts();
 
   return (
-    <main className="mx-auto flex max-w-2xl flex-1 flex-col gap-6 p-8">
+    <main className="flex w-full flex-1 flex-col gap-6 p-6">
       <Link href="/admin" className="text-sm text-blush/60 underline">
         &larr; back to dashboard
       </Link>

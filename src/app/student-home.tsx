@@ -321,7 +321,7 @@ export function StateB({
       {!optedOut && (
         <div className="flex flex-col gap-2">
           <p className="text-sm text-blush/70">
-            Tap trips in the order you&apos;d prefer them — first tap is your #1 choice.
+            Tap trips in the order you&apos;d prefer them - first tap is your #1 choice.
           </p>
           <ul className="flex flex-col gap-2 text-sm">
             {trips.map((t) => {
@@ -344,7 +344,7 @@ export function StateB({
                     />
                     <span
                       className={`mt-0.5 flex h-6 w-6 flex-none items-center justify-center rounded-full border text-xs font-semibold ${
-                        selected ? "border-magenta bg-magenta text-plum" : "border-plum/30"
+                        selected ? "border-magenta bg-magenta text-background" : "border-plum/30"
                       }`}
                     >
                       {selected ? rank + 1 : ""}
@@ -365,7 +365,7 @@ export function StateB({
       <button
         onClick={handleSubmit}
         disabled={!isComplete || saveState === "saving"}
-        className="w-fit rounded bg-magenta px-4 py-2 text-plum hover:brightness-90 disabled:opacity-40"
+        className="w-fit rounded bg-magenta px-4 py-2 text-background hover:brightness-90 disabled:opacity-40"
       >
         {saveState === "saving" ? "Saving…" : "Save"}
       </button>

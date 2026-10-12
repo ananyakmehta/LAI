@@ -17,7 +17,7 @@ export async function ViewAsBanner() {
   const label = await describeSimulation(ctx.role, ctx.email, ctx.teacherTripId, ctx.timePhase);
 
   return (
-    <div className="flex items-center justify-between bg-magenta px-4 py-2 text-sm text-plum">
+    <div className="flex items-center justify-between bg-magenta px-4 py-2 text-sm text-background">
       <span>Viewing as: {label}</span>
       <form
         action={async () => {

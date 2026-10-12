@@ -42,13 +42,13 @@ export function ReleaseAssignmentsControl({ releasedAt }: { releasedAt: string |
       <p className="mb-2 text-plum/70">
         {releasedAt
           ? `Released ${new Date(releasedAt).toLocaleString()}. Re-running sort for a grade after this won't hide it again until you release once more.`
-          : "Students won't see their trip assignment until you release it here — sorting can finish grade by grade without anyone seeing results early."}
+          : "Students won't see their trip assignment until you release it here - sorting can finish grade by grade without anyone seeing results early."}
       </p>
       <button
         type="button"
         onClick={run}
         disabled={status === "running"}
-        className="rounded bg-magenta px-3 py-1 text-plum hover:brightness-90 disabled:opacity-40"
+        className="rounded bg-magenta px-3 py-1 text-background hover:brightness-90 disabled:opacity-40"
       >
         {status === "running" ? "Releasing…" : releasedAt ? "Re-release trip assignments" : "Release trip assignments to all grades"}
       </button>

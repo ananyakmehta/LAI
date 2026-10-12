@@ -81,7 +81,7 @@ export function PreviewClient({ trips }: { trips: Trip[] }) {
             onClick={() => setSelected(opt.key)}
             className={`rounded border px-3 py-1 text-sm ${
               selected === opt.key
-                ? "border-magenta bg-magenta text-plum"
+                ? "border-magenta bg-magenta text-background"
                 : "border-rose text-blush hover:bg-petal hover:text-plum"
             }`}
           >
@@ -92,7 +92,7 @@ export function PreviewClient({ trips }: { trips: Trip[] }) {
 
       <div className="rounded border border-petal p-4">
         <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-blush/50">
-          Preview — not real data
+          Preview - not real data
         </p>
 
         {selected === "NOT_OPEN" && <StateNotOpen trips={sample} />}

@@ -36,7 +36,7 @@ export default async function TripRosterPage({
     : [];
 
   return (
-    <main className="mx-auto flex max-w-2xl flex-1 flex-col gap-4 p-8">
+    <main className="mx-auto flex w-full max-w-[1700px] flex-1 flex-col gap-4 px-6 py-8">
       <Link href="/admin" className="text-sm text-blush/60 underline">
         &larr; back to dashboard
       </Link>

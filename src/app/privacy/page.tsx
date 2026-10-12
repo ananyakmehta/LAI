@@ -4,7 +4,7 @@ import Link from "next/link";
 // here for signed-out users, and needs to be reachable without a session.
 export default function PrivacyPage() {
   return (
-    <main className="mx-auto flex max-w-2xl flex-1 flex-col gap-6 p-8">
+    <main className="flex w-full flex-1 flex-col gap-6 p-6">
       <Link href="/" className="text-sm text-blush/60 underline">
         &larr; back
       </Link>

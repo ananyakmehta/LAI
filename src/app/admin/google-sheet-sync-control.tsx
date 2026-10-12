@@ -35,7 +35,7 @@ export function GoogleSheetSyncControl() {
         type="button"
         onClick={run}
         disabled={status === "running"}
-        className="rounded bg-magenta px-3 py-1 text-plum hover:brightness-90 disabled:opacity-40"
+        className="rounded bg-magenta px-3 py-1 text-background hover:brightness-90 disabled:opacity-40"
       >
         {status === "running" ? "Syncing…" : "Sync to Google Sheet"}
       </button>

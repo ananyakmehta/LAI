@@ -185,7 +185,7 @@ export default async function AdminPage({
         <section>
           <h2 className="mb-2 text-lg font-semibold text-blush">Screen preview</h2>
           <p className="mb-2 text-sm text-blush/70">
-            Click through every student-facing screen with sample data — writes nothing to the
+            Click through every student-facing screen with sample data - writes nothing to the
             database, so it&rsquo;s safe to use on real data.
           </p>
           <Link
@@ -220,9 +220,9 @@ export default async function AdminPage({
                         <td className="py-2 pr-4 pl-2">{c.timestamp.toLocaleString()}</td>
                         <td className="break-all py-2 pr-4">{c.who}</td>
                         <td className="break-all py-2 pr-4">{c.action}</td>
-                        <td className="break-all py-2 pr-4">{c.studentEmail ?? "—"}</td>
-                        <td className="break-all py-2 pr-4">{c.fromTrip ?? "—"}</td>
-                        <td className="break-all py-2 pr-2">{c.toTrip ?? "—"}</td>
+                        <td className="break-all py-2 pr-4">{c.studentEmail ?? "-"}</td>
+                        <td className="break-all py-2 pr-4">{c.fromTrip ?? "-"}</td>
+                        <td className="break-all py-2 pr-2">{c.toTrip ?? "-"}</td>
                       </tr>
                     ))}
                   </tbody>

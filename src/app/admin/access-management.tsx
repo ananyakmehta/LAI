@@ -68,7 +68,7 @@ export function AccessManagement({ roles, trips }: { roles: RoleRow[]; trips: Tr
             <tr key={r.email} className="border-b">
               <td className="py-2 pr-4">{r.email}</td>
               <td className="py-2 pr-4">{r.role}</td>
-              <td className="py-2 pr-4">{r.tripName ?? "—"}</td>
+              <td className="py-2 pr-4">{r.tripName ?? "-"}</td>
               <td className="py-2 pr-4">
                 <button onClick={() => handleRevoke(r.email)} className="text-red-400 underline">
                   Revoke
@@ -116,7 +116,7 @@ export function AccessManagement({ roles, trips }: { roles: RoleRow[]; trips: Tr
         <button
           onClick={handleGrant}
           disabled={!email || (role === "teacher" && !tripId) || status === "saving"}
-          className="rounded bg-magenta px-3 py-1 text-plum hover:brightness-90 disabled:opacity-40"
+          className="rounded bg-magenta px-3 py-1 text-background hover:brightness-90 disabled:opacity-40"
         >
           Grant
         </button>

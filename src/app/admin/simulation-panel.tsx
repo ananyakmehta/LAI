@@ -84,7 +84,7 @@ function AssignRankingsControl({ trips }: { trips: TripOption[] }) {
     setStatus("idle");
     const failedNote =
       data.failed.length > 0
-        ? ` ${data.failed.length} failed — check that ${grade}'s wave is currently open (use "Start wave" below first).`
+        ? ` ${data.failed.length} failed - check that ${grade}'s wave is currently open (use "Start wave" below first).`
         : "";
     setResult(
       `${data.submitted}/${data.attempted} submitted, ${data.nonResponders.length} non-responders, ${data.optedOut.length} opted out.${failedNote}`,
@@ -101,7 +101,7 @@ function AssignRankingsControl({ trips }: { trips: TripOption[] }) {
           type="button"
           onClick={run}
           disabled={status === "running"}
-          className="rounded bg-magenta px-3 py-1 text-plum hover:brightness-90 disabled:opacity-40"
+          className="rounded bg-magenta px-3 py-1 text-background hover:brightness-90 disabled:opacity-40"
         >
           {status === "running" ? "Submitting…" : "Assign + submit"}
         </button>
@@ -138,7 +138,7 @@ function AssignRankingsControl({ trips }: { trips: TripOption[] }) {
           </label>
           <div>
             <p className="mb-1 text-plum">
-              Percent distribution (relative weight per trip) — total:{" "}
+              Percent distribution (relative weight per trip) - total:{" "}
               <span className={totalWeight === 100 ? "text-green-700" : "text-red-600"}>
                 {totalWeight}%
               </span>
@@ -193,7 +193,7 @@ function WaveControl() {
     setStatus("idle");
     if (action === "start-wave") {
       setResult(
-        `Wave ${WAVE_BY_GRADE[grade]} (${data.grade}) opened now — closes ${new Date(data.closesAt).toLocaleString()}.`,
+        `Wave ${WAVE_BY_GRADE[grade]} (${data.grade}) opened now - closes ${new Date(data.closesAt).toLocaleString()}.`,
       );
     } else {
       setResult(
@@ -212,7 +212,7 @@ function WaveControl() {
           type="button"
           onClick={() => run("start-wave")}
           disabled={status === "running"}
-          className="rounded bg-magenta px-3 py-1 text-plum hover:brightness-90 disabled:opacity-40"
+          className="rounded bg-magenta px-3 py-1 text-background hover:brightness-90 disabled:opacity-40"
         >
           Start wave
         </button>
@@ -268,7 +268,7 @@ function SortControl() {
           type="button"
           onClick={run}
           disabled={status === "running"}
-          className="rounded bg-magenta px-3 py-1 text-plum hover:brightness-90 disabled:opacity-40"
+          className="rounded bg-magenta px-3 py-1 text-background hover:brightness-90 disabled:opacity-40"
         >
           Run sort
         </button>
@@ -297,7 +297,7 @@ function ResetControl() {
     }
     setStatus("idle");
     setResult(
-      `Cleared ${data.clearedAssignments} assignment(s), ${data.clearedSubmissions} submission(s), and ${data.clearedWaivers} waiver acknowledgment(s) — and un-released assignments — across all grades.`,
+      `Cleared ${data.clearedAssignments} assignment(s), ${data.clearedSubmissions} submission(s), and ${data.clearedWaivers} waiver acknowledgment(s) - and un-released assignments - across all grades.`,
     );
     router.refresh();
   }
@@ -310,7 +310,7 @@ function ResetControl() {
           type="button"
           onClick={run}
           disabled={status === "running"}
-          className="rounded bg-magenta px-3 py-1 text-plum hover:brightness-90 disabled:opacity-40"
+          className="rounded bg-magenta px-3 py-1 text-background hover:brightness-90 disabled:opacity-40"
         >
           Clear everything (every grade)
         </button>

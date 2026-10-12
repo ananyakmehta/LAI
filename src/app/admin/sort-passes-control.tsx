@@ -45,7 +45,7 @@ function PassButton({
         type="button"
         onClick={run}
         disabled={status === "running"}
-        className="rounded bg-magenta px-3 py-1 text-plum hover:brightness-90 disabled:opacity-40"
+        className="rounded bg-magenta px-3 py-1 text-background hover:brightness-90 disabled:opacity-40"
       >
         {status === "running" ? "Running…" : `Run ${label}`}
       </button>
@@ -67,12 +67,12 @@ export function SortPassesControl() {
   return (
     <div className="flex flex-col gap-3">
       <PassButton
-        label="Pass 1 — Senior, then Junior"
+        label="Pass 1 - Senior, then Junior"
         description="Sorts seniors who submitted by their priority deadline first (full capacity), then juniors into what's left. Run 5 minutes after the senior/junior priority deadline."
         endpoint="/api/admin/sort-pass-1"
       />
       <PassButton
-        label="Pass 2 — Sophomore + late Senior/Junior, then Freshman"
+        label="Pass 2 - Sophomore + late Senior/Junior, then Freshman"
         description="Merges sophomores with any senior/junior who missed their priority deadline into one shuffled pool, then places freshmen after. Run 5 minutes after the final submission deadline."
         endpoint="/api/admin/sort-pass-2"
       />

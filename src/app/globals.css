@@ -1,22 +1,28 @@
 @import "tailwindcss";
 
 :root {
-  --background: #001233;
-  --foreground: #001233;
+  --background: #cae9ff;
+  --foreground: #001845;
 
-  /* Palette — pure blues, no yellow. Darkest blue page background, light
-     blue for buttons/selection accents and for text that sits directly on
-     the page background (not inside a white/light card), dark navy for
-     text inside white/light cards. --color-rose is the mid blue — kept
-     distinct from both --background and --color-plum so borders stay
-     visible against the page and hover states never land on a color that
-     matches text sitting on top of it. */
-  --color-mist: #a2d6f9;
-  --color-blush: #a2d6f9;
+  /* Palette — light blue page background, dark navy accent (buttons, and
+     text that sits directly on the page background or inside a white/light
+     card — all three roles share one accent value now that the background
+     itself is light). --color-petal stays the original light blue: a
+     light fill/divider used both on white cards and bare page background,
+     never a role that pairs with light text so it doesn't need to flip.
+     --color-rose stays the original mid blue — distinct from both the
+     light background and the dark accent, so border hover states (rose ->
+     magenta) stay visible. Buttons filled with --color-magenta use
+     text-background (light) for their label, NOT text-plum — plum and
+     magenta are the same dark value now, so pairing a magenta fill with
+     plum text would make the label invisible, the exact bug fixed earlier
+     this project for the old dark-background palette. */
+  --color-mist: #001845;
+  --color-blush: #001845;
   --color-petal: #a2d6f9;
   --color-rose: #023e7d;
-  --color-magenta: #a2d6f9;
-  --color-plum: #001233;
+  --color-magenta: #001845;
+  --color-plum: #001845;
 }
 
 @theme inline {

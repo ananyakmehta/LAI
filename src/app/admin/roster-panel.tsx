@@ -140,7 +140,7 @@ export function RosterPanel({
                 <td className="py-2 pr-4">{row.email}</td>
                 <td className="py-2 pr-4">{row.grade}</td>
                 <td className="py-2 pr-4">{row.submissionStatus}</td>
-                <td className="py-2 pr-4">{row.assignedTripName ?? "—"}</td>
+                <td className="py-2 pr-4">{row.assignedTripName ?? "-"}</td>
                 <td className="py-2 pr-4">
                   {[
                     [row.parent1Email, row.parent1Phone].filter(Boolean).join(" / ") &&
@@ -149,7 +149,7 @@ export function RosterPanel({
                       `P2: ${[row.parent2Email, row.parent2Phone].filter(Boolean).join(" / ")}`,
                   ]
                     .filter(Boolean)
-                    .join(" · ") || "—"}
+                    .join(" · ") || "-"}
                 </td>
                 {canMove && (
                   <td className="py-2 pr-2 text-right">
@@ -241,9 +241,9 @@ function FlaggedList({
                   <button
                     type="button"
                     onClick={() => onClickName(r.email)}
-                    className="text-left text-plum underline decoration-petal hover:text-magenta"
+                    className="text-left text-plum underline decoration-petal hover:text-plum/60"
                   >
-                    {r.name} ({r.email}){r.notes ? ` — notes: ${r.notes}` : ""}
+                    {r.name} ({r.email}){r.notes ? ` - notes: ${r.notes}` : ""}
                   </button>
                 </li>
               ))}

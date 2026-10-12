@@ -10,7 +10,7 @@ export default async function HomePage() {
 
   if (!session?.user?.email) {
     return (
-      <main className="mx-auto flex max-w-md flex-1 flex-col items-center justify-center gap-6 p-8 text-center">
+      <main className="flex w-full flex-1 flex-col items-center justify-center gap-6 p-6 text-center">
         <h1 className="text-2xl font-semibold text-blush">Learning in Action Day</h1>
         <p className="text-sm text-blush/70">
           Sign in with your @presentationhs.org Google account to browse
@@ -24,7 +24,7 @@ export default async function HomePage() {
         >
           <button
             type="submit"
-            className="rounded bg-magenta px-4 py-2 text-plum hover:brightness-90"
+            className="rounded bg-magenta px-4 py-2 text-background hover:brightness-90"
           >
             Sign in with Google
           </button>
@@ -61,7 +61,7 @@ export default async function HomePage() {
 
   if (ctx.role === "teacher") {
     return (
-      <main className="mx-auto flex max-w-2xl flex-1 flex-col gap-6 p-8">
+      <main className="flex w-full flex-1 flex-col gap-6 p-6">
         {header}
         <TeacherHome tripId={ctx.teacherTripId} />
       </main>
@@ -76,7 +76,7 @@ export default async function HomePage() {
   const changeRequestVisible =
     !eventConfig.finalLockAt || new Date() < eventConfig.finalLockAt;
   return (
-    <main className="mx-auto flex max-w-2xl flex-1 flex-col gap-6 p-8">
+    <main className="flex w-full flex-1 flex-col gap-6 p-6">
       {header}
       <StudentHome
         changeRequestVisible={changeRequestVisible}
