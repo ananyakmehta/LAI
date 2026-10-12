@@ -144,7 +144,7 @@ export function TripDetails({ t }: { t: Trip }) {
   const full = t.seatsRemaining <= 0;
   const parts: string[] = [];
   if (t.facultyLead) parts.push(`Faculty: ${t.facultyLead}`);
-  if (t.startTime && t.endTime) parts.push(`${t.startTime} – ${t.endTime}`);
+  if (t.startTime && t.endTime) parts.push(`${t.startTime} - ${t.endTime}`);
   if (t.travelMethod) parts.push(t.travelMethod);
 
   return (
@@ -493,7 +493,7 @@ export function StateD({
         {assignment.facultyLead && <>Faculty: {assignment.facultyLead} · </>}
         {assignment.startTime && assignment.endTime && (
           <>
-            {assignment.startTime} – {assignment.endTime}
+            {assignment.startTime} - {assignment.endTime}
             {assignment.travelMethod ? " · " : ""}
           </>
         )}
