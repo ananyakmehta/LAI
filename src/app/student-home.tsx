@@ -321,7 +321,7 @@ export function StateB({
       {!optedOut && (
         <div className="flex flex-col gap-2">
           <p className="text-sm text-blush/70">
-            Tap trips in the order you&apos;d prefer them - first tap is your #1 choice.
+            Select trips in ranking order:
           </p>
           <ul className="flex flex-col gap-2 text-sm">
             {trips.map((t) => {
