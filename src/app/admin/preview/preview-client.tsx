@@ -54,8 +54,10 @@ export function PreviewClient({ trips }: { trips: Trip[] }) {
     tripChoice2: sample[1]?.id ?? null,
     tripChoice3: sample[2]?.id ?? null,
     tripChoice4: sample[3]?.id ?? null,
-    parentEmail: "parent@example.com",
-    parentPhone: "555-0100",
+    parent1Email: "parent1@example.com",
+    parent1Phone: "555-0100",
+    parent2Email: "parent2@example.com",
+    parent2Phone: "555-0101",
   };
 
   const assignedTrip = firstTrip

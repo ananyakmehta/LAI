@@ -11,11 +11,17 @@ import { getMasterOverview } from "@/db/queries/dashboard";
  */
 
 const SHEET_TAB = "Roster";
-const HEADER = ["Student", "Email", "Grade", "Parent contact", "Trip"];
-
-function parentContact(parentEmail: string | null, parentPhone: string | null): string {
-  return [parentEmail, parentPhone].filter(Boolean).join(" / ") || "";
-}
+const HEADER = [
+  "Student",
+  "Email",
+  "Grade",
+  "Parent 1 Email",
+  "Parent 1 Phone",
+  "Parent 2 Email",
+  "Parent 2 Phone",
+  "Trip",
+];
+const TRIP_COLUMN_INDEX = HEADER.indexOf("Trip");
 
 function getClient(): JWT | null {
   const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
@@ -58,7 +64,10 @@ export async function syncRosterToGoogleSheet(): Promise<{ rowCount: number }> {
       r.name,
       r.email,
       r.grade,
-      parentContact(r.parentEmail, r.parentPhone),
+      r.parent1Email ?? "",
+      r.parent1Phone ?? "",
+      r.parent2Email ?? "",
+      r.parent2Phone ?? "",
       r.assignedTripName ?? "",
     ])
     // Grouped into one clean contiguous block per trip (alphabetical by trip,
@@ -66,8 +75,8 @@ export async function syncRosterToGoogleSheet(): Promise<{ rowCount: number }> {
     // their trip's block — unassigned students sort to the very end rather
     // than interleaving blank-trip rows between trip blocks.
     .sort((a, b) => {
-      const tripA = a[4] || "￿";
-      const tripB = b[4] || "￿";
+      const tripA = a[TRIP_COLUMN_INDEX] || "￿";
+      const tripB = b[TRIP_COLUMN_INDEX] || "￿";
       return tripA.localeCompare(tripB) || a[0].localeCompare(b[0]);
     });
 

@@ -21,8 +21,10 @@ export interface SubmissionRecord {
   tripChoice2: string | null;
   tripChoice3: string | null;
   tripChoice4: string | null;
-  parentEmail: string | null;
-  parentPhone: string | null;
+  parent1Email: string | null;
+  parent1Phone: string | null;
+  parent2Email: string | null;
+  parent2Phone: string | null;
 }
 
 export interface AssignedTrip {
@@ -193,8 +195,10 @@ export function StateB({
       (c): c is string => !!c,
     ),
   );
-  const [parentEmail, setParentEmail] = useState(existing?.parentEmail ?? "");
-  const [parentPhone, setParentPhone] = useState(existing?.parentPhone ?? "");
+  const [parent1Email, setParent1Email] = useState(existing?.parent1Email ?? "");
+  const [parent1Phone, setParent1Phone] = useState(existing?.parent1Phone ?? "");
+  const [parent2Email, setParent2Email] = useState(existing?.parent2Email ?? "");
+  const [parent2Phone, setParent2Phone] = useState(existing?.parent2Phone ?? "");
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -206,14 +210,20 @@ export function StateB({
     });
   }
 
-  const isComplete = optedOut || order.length === 4;
+  // At least one contact method, from either parent/guardian slot, is
+  // required — which field or which slot doesn't matter.
+  const hasParentContact = Boolean(
+    parent1Email.trim() || parent1Phone.trim() || parent2Email.trim() || parent2Phone.trim(),
+  );
+  const isComplete = (optedOut || order.length === 4) && hasParentContact;
 
   async function handleSubmit() {
     setSaveState("saving");
     setErrorMessage(null);
+    const contact = { parent1Email, parent1Phone, parent2Email, parent2Phone };
     const body = optedOut
-      ? { optedOut: true as const, parentEmail, parentPhone }
-      : { optedOut: false as const, choices: order, parentEmail, parentPhone };
+      ? { optedOut: true as const, ...contact }
+      : { optedOut: false as const, choices: order, ...contact };
     const res = await fetch("/api/submissions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -252,25 +262,60 @@ export function StateB({
         I know I am not going to be here
       </label>
 
-      <div className="flex flex-col gap-2 text-sm text-blush sm:flex-row sm:gap-4">
-        <label className="flex flex-1 flex-col gap-1">
-          Parent/guardian email
-          <input
-            type="email"
-            className="rounded border border-petal bg-white p-2 text-plum"
-            value={parentEmail}
-            onChange={(e) => setParentEmail(e.target.value)}
-          />
-        </label>
-        <label className="flex flex-1 flex-col gap-1">
-          Parent/guardian phone
-          <input
-            type="tel"
-            className="rounded border border-petal bg-white p-2 text-plum"
-            value={parentPhone}
-            onChange={(e) => setParentPhone(e.target.value)}
-          />
-        </label>
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2">
+          <p className="text-sm font-medium text-blush">Parent/guardian 1</p>
+          <div className="flex flex-col gap-2 text-sm text-blush sm:flex-row sm:gap-4">
+            <label className="flex flex-1 flex-col gap-1">
+              Email
+              <input
+                type="email"
+                className="rounded border border-petal bg-white p-2 text-plum"
+                value={parent1Email}
+                onChange={(e) => setParent1Email(e.target.value)}
+              />
+            </label>
+            <label className="flex flex-1 flex-col gap-1">
+              Phone
+              <input
+                type="tel"
+                className="rounded border border-petal bg-white p-2 text-plum"
+                value={parent1Phone}
+                onChange={(e) => setParent1Phone(e.target.value)}
+              />
+            </label>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <p className="text-sm font-medium text-blush">Parent/guardian 2 (optional)</p>
+          <div className="flex flex-col gap-2 text-sm text-blush sm:flex-row sm:gap-4">
+            <label className="flex flex-1 flex-col gap-1">
+              Email
+              <input
+                type="email"
+                className="rounded border border-petal bg-white p-2 text-plum"
+                value={parent2Email}
+                onChange={(e) => setParent2Email(e.target.value)}
+              />
+            </label>
+            <label className="flex flex-1 flex-col gap-1">
+              Phone
+              <input
+                type="tel"
+                className="rounded border border-petal bg-white p-2 text-plum"
+                value={parent2Phone}
+                onChange={(e) => setParent2Phone(e.target.value)}
+              />
+            </label>
+          </div>
+        </div>
+
+        {!hasParentContact && (
+          <p className="text-sm text-blush/70">
+            At least one email or phone number, for either parent/guardian, is required.
+          </p>
+        )}
       </div>
 
       {!optedOut && (

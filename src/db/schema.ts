@@ -107,9 +107,13 @@ export const submissions = pgTable("submissions", {
   optedOut: boolean("opted_out").notNull().default(false),
   // Collected alongside the ranking, regardless of opt-out status — a
   // contact for the trip day itself, not identity/login (that's the
-  // student's own roster email).
-  parentEmail: text("parent_email"),
-  parentPhone: text("parent_phone"),
+  // student's own roster email). Two independent parent/guardian slots;
+  // each is optional on its own, but at least one of all four fields across
+  // both is required (enforced in the submissions API, not here).
+  parent1Email: text("parent_email"),
+  parent1Phone: text("parent_phone"),
+  parent2Email: text("parent2_email"),
+  parent2Phone: text("parent2_phone"),
   submittedAt: timestamp("submitted_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

@@ -16,8 +16,10 @@ interface RosterRow {
   submissionStatus: "none" | "opted_out" | "submitted" | "MANUAL";
   assignedTripId: string | null;
   assignedTripName: string | null;
-  parentEmail: string | null;
-  parentPhone: string | null;
+  parent1Email: string | null;
+  parent1Phone: string | null;
+  parent2Email: string | null;
+  parent2Phone: string | null;
 }
 
 interface FlaggedRow {
@@ -140,7 +142,14 @@ export function RosterPanel({
                 <td className="py-2 pr-4">{row.submissionStatus}</td>
                 <td className="py-2 pr-4">{row.assignedTripName ?? "—"}</td>
                 <td className="py-2 pr-4">
-                  {[row.parentEmail, row.parentPhone].filter(Boolean).join(" / ") || "—"}
+                  {[
+                    [row.parent1Email, row.parent1Phone].filter(Boolean).join(" / ") &&
+                      `P1: ${[row.parent1Email, row.parent1Phone].filter(Boolean).join(" / ")}`,
+                    [row.parent2Email, row.parent2Phone].filter(Boolean).join(" / ") &&
+                      `P2: ${[row.parent2Email, row.parent2Phone].filter(Boolean).join(" / ")}`,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ") || "—"}
                 </td>
                 {canMove && (
                   <td className="py-2 pr-2 text-right">

@@ -72,8 +72,10 @@ export async function GET(request: Request) {
 }
 
 const parentContactFields = {
-  parentEmail: z.string().trim().max(320).optional(),
-  parentPhone: z.string().trim().max(40).optional(),
+  parent1Email: z.string().trim().max(320).optional(),
+  parent1Phone: z.string().trim().max(40).optional(),
+  parent2Email: z.string().trim().max(320).optional(),
+  parent2Phone: z.string().trim().max(40).optional(),
 };
 
 const bodySchema = z.discriminatedUnion("optedOut", [
@@ -127,8 +129,17 @@ export async function POST(request: Request) {
     );
   }
 
-  const parentEmail = parsed.data.parentEmail?.trim() || null;
-  const parentPhone = parsed.data.parentPhone?.trim() || null;
+  const parent1Email = parsed.data.parent1Email?.trim() || null;
+  const parent1Phone = parsed.data.parent1Phone?.trim() || null;
+  const parent2Email = parsed.data.parent2Email?.trim() || null;
+  const parent2Phone = parsed.data.parent2Phone?.trim() || null;
+
+  // At least one contact method across either parent/guardian slot is
+  // required — which one (email vs. phone) or which slot (1 vs. 2) doesn't
+  // matter, as long as something is reachable on the trip day.
+  if (!parent1Email && !parent1Phone && !parent2Email && !parent2Phone) {
+    return NextResponse.json({ error: "missing_parent_contact" }, { status: 400 });
+  }
 
   if (parsed.data.optedOut) {
     await upsertSubmission(email, {
@@ -137,8 +148,10 @@ export async function POST(request: Request) {
       tripChoice2: null,
       tripChoice3: null,
       tripChoice4: null,
-      parentEmail,
-      parentPhone,
+      parent1Email,
+      parent1Phone,
+      parent2Email,
+      parent2Phone,
     });
     return NextResponse.json({ ok: true });
   }
@@ -165,8 +178,10 @@ export async function POST(request: Request) {
     tripChoice2: choices[1],
     tripChoice3: choices[2],
     tripChoice4: choices[3],
-    parentEmail,
-    parentPhone,
+    parent1Email,
+    parent1Phone,
+    parent2Email,
+    parent2Phone,
   });
   return NextResponse.json({ ok: true });
 }

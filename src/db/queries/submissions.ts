@@ -17,8 +17,10 @@ export interface SubmissionInput {
   tripChoice2: string | null;
   tripChoice3: string | null;
   tripChoice4: string | null;
-  parentEmail: string | null;
-  parentPhone: string | null;
+  parent1Email: string | null;
+  parent1Phone: string | null;
+  parent2Email: string | null;
+  parent2Phone: string | null;
 }
 
 /**

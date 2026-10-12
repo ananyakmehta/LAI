@@ -89,8 +89,10 @@ async function main() {
         tripChoice2: null,
         tripChoice3: null,
         tripChoice4: null,
-        parentEmail: null,
-        parentPhone: null,
+        parent1Email: null,
+        parent1Phone: null,
+        parent2Email: null,
+        parent2Phone: null,
       });
       optedOutCount++;
       continue;
@@ -103,8 +105,10 @@ async function main() {
       tripChoice2: c2.id,
       tripChoice3: c3.id,
       tripChoice4: c4.id,
-      parentEmail: null,
-      parentPhone: null,
+      parent1Email: null,
+      parent1Phone: null,
+      parent2Email: null,
+      parent2Phone: null,
     });
     choice1Counts.set(c1.name, (choice1Counts.get(c1.name) ?? 0) + 1);
   }
