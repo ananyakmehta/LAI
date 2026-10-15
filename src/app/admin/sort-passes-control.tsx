@@ -76,6 +76,11 @@ export function SortPassesControl() {
         description="Merges sophomores with any senior/junior who missed their priority deadline into one shuffled pool, then places freshmen after. Run 5 minutes after the final submission deadline."
         endpoint="/api/admin/sort-pass-2"
       />
+      <PassButton
+        label="Final sort - stragglers"
+        description="Places anyone, any grade, who has a ranking in but no trip yet into whatever capacity remains - one shuffled pool, lowest priority. Safe to re-run; only picks up students still unassigned at the time. Use after the extended submission window closes."
+        endpoint="/api/admin/sort-final"
+      />
     </div>
   );
 }

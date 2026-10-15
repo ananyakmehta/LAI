@@ -1,5 +1,5 @@
 import { randomInt } from "node:crypto";
-import { and, eq, gt, inArray, lte } from "drizzle-orm";
+import { and, eq, gt, inArray, isNull, lte } from "drizzle-orm";
 import { db } from "@/db/client";
 import {
   assignments,
@@ -208,7 +208,7 @@ export interface PassGroupResult {
 }
 
 export interface PassResult {
-  pass: 1 | 2;
+  pass: 1 | 2 | 3;
   groups: PassGroupResult[];
 }
 
@@ -453,5 +453,69 @@ export async function runLotteryPass2(triggeredBy: string): Promise<PassResult> 
     });
 
     return { pass: 2, groups };
+  });
+}
+
+/**
+ * Eligibility for the final straggler pass: any grade, opted in, and —
+ * unlike Pass 1/2's deadline-based grouping — simply no assignments row
+ * yet. That covers both genuine latecomers (submitted after Pass 1/2 ran)
+ * and anyone re-submitted after this grade's pass already placed them
+ * doesn't re-enter this pool, since they already have an assignment.
+ */
+async function getUnassignedSubmitters(tx: Tx): Promise<EligibleStudent[]> {
+  return tx
+    .select({
+      studentEmail: submissions.studentEmail,
+      choice1: submissions.tripChoice1,
+      choice2: submissions.tripChoice2,
+      choice3: submissions.tripChoice3,
+      choice4: submissions.tripChoice4,
+    })
+    .from(submissions)
+    .innerJoin(roster, eq(submissions.studentEmail, roster.email))
+    .leftJoin(assignments, eq(submissions.studentEmail, assignments.studentEmail))
+    .where(and(eq(submissions.optedOut, false), isNull(assignments.studentEmail)));
+}
+
+/**
+ * Final catch-all pass for stragglers (2026 brief: the extended window
+ * past both regular passes). Everyone across every grade who has a
+ * ranking in but no trip yet — genuine latecomers plus anyone still
+ * unplaced from Pass 1/2's capacity crunch — goes into ONE shuffled pool,
+ * deliberately lowest priority against whatever capacity is left, with no
+ * grade-based tiering. Re-running it later only processes whoever is
+ * still unassigned at that point, since eligibility is "no assignment
+ * row" rather than a snapshot/clear like Pass 1/2 — nothing to undo for a
+ * student this pass hasn't touched yet.
+ */
+export async function runFinalSort(triggeredBy: string): Promise<PassResult> {
+  return db.transaction(async (tx) => {
+    const stragglers = await getUnassignedSubmitters(tx);
+    const { filledCount, capacityById } = await loadCapacityState(tx);
+    const result = placeIntoTrips(stragglers, filledCount, capacityById);
+
+    if (result.assigned.length > 0) {
+      await tx.insert(assignments).values(
+        result.assigned.map((a) => ({ ...a, assignmentMethod: "lottery" as const })),
+      );
+    }
+
+    const group = await writeGroupResults(
+      tx,
+      triggeredBy,
+      "stragglers (all grades)",
+      stragglers,
+      result.assigned,
+      result.unplaced,
+    );
+
+    await tx.insert(changeLog).values({
+      who: triggeredBy,
+      action: "run_sort_final",
+      toTrip: `stragglers:${stragglers.length}`,
+    });
+
+    return { pass: 3, groups: [group] };
   });
 }
